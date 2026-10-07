@@ -7,9 +7,13 @@
 - Chỉ thêm comment khi logic khó hiểu hoặc cần giải thích.
 - Comment bằng tiếng Anh, ngắn gọn, đơn giản.
 
-## 3. Test
+## 3. Documentation
+- Viết tài liệu đơn giản, chỉ ghi ý chính.
+
+## 4. Test
 - Phải test trước khi bàn giao.
 
-## 4. Version control
-- Khi chỉnh sửa hoặc thêm chức năng, tạo một nhánh git mới.
-- Hoàn thành thì merge lại vào nhánh `main`.
+## 5. Version control
+- Chỉ tạo nhánh git mới khi thêm chức năng hoặc thay đổi lớn.
+- Thay đổi nhỏ (sửa tài liệu, chỉnh sửa nhỏ) commit trực tiếp vào `main`.
+- Hoàn thành chức năng thì merge lại vào nhánh `main`.
