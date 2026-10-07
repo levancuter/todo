@@ -15,5 +15,5 @@
 
 ## 5. Version control
 - Chỉ tạo nhánh git mới khi thêm chức năng hoặc thay đổi lớn.
-- Thay đổi nhỏ (sửa tài liệu, chỉnh sửa nhỏ) commit trực tiếp vào `main`.
+- Thay đổi nhỏ (sửa tài liệu, chỉnh sửa nhỏ) commit trực tiếp vào nhánh hiện tại.
 - Hoàn thành chức năng thì merge lại vào nhánh `main`.
