@@ -1,17 +1,17 @@
-# Todo App - Tài liệu chức năng
+# Todo App - Chức năng
 
-## Chức năng - Phiên bản 1 (MVP)
-| # | Chức năng | Mô tả | Trạng thái |
-|---|-----------|-------|------------|
-| 1 | Thêm việc | Nhập nội dung, nhấn Enter để thêm. Bỏ qua nội dung rỗng. | Chưa làm |
-| 2 | Hoàn thành | Tick checkbox để đánh dấu xong, việc đã xong hiển thị gạch ngang. | Chưa làm |
-| 3 | Xóa việc | Nút xóa trên từng việc. | Chưa làm |
-| 4 | Tự động lưu | Mọi thay đổi được lưu lại, tải lại trang không mất dữ liệu. | Chưa làm |
+## Phiên bản 1 (MVP)
 
-## Chức năng dự kiến (các phiên bản sau)
+- Thêm việc: nhập nội dung, nhấn Enter để thêm. Bỏ qua nội dung rỗng.
+- Hoàn thành: tick checkbox để đánh dấu xong, việc đã xong hiển thị gạch ngang.
+- Xóa việc: nút xóa trên từng việc.
+- Tự động lưu: tải lại trang không mất dữ liệu.
+
+## Dự kiến
+
 - Sửa nội dung việc
 - Lọc: tất cả / đang làm / đã xong
-- Hạn chót (deadline)
+- Hạn chót
 - Mức độ ưu tiên
 - Nhóm hoặc tag
 - Xuất/nhập JSON để sao lưu
