@@ -8,10 +8,29 @@
   </head>
   <body>
     <main>
-      <h1>Todo</h1>
+      <header>
+        <h1>Todo</h1>
+        <div id="user" hidden>
+          <span id="user-name"></span>
+          <button id="logout" class="link">Đăng xuất</button>
+        </div>
+      </header>
+
       <p id="status">Đang tải...</p>
-      <button id="login" hidden>Đăng nhập bằng Google</button>
-      <button id="logout" hidden>Đăng xuất</button>
+
+      <section id="login-view" hidden>
+        <p>Đăng nhập để xem và đồng bộ danh sách việc của bạn.</p>
+        <button id="login" class="primary">Đăng nhập bằng Google</button>
+      </section>
+
+      <section id="todo-view" hidden>
+        <form id="add-form">
+          <input id="new-todo" type="text" placeholder="Thêm việc mới..." autocomplete="off" />
+        </form>
+        <ul id="todo-list"></ul>
+        <p id="empty" hidden>Chưa có việc nào.</p>
+        <p id="count"></p>
+      </section>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>
