@@ -1,6 +1,7 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { isDragging, makeSortable } from "./drag.js";
 import { auth, googleProvider } from "./firebase.js";
-import { orderBetween } from "./order.js";
+import { orderBetween, sortTodos } from "./order.js";
 import { addTodo, removeTodo, setDone, setOrder, watchTodos } from "./todos.js";
 
 const $ = (id) => document.getElementById(id);
@@ -18,7 +19,6 @@ const count = $("count");
 let uid = null;
 let unsubscribe = null;
 let todos = [];
-let dragging = null;
 
 function showError(err) {
   status.hidden = false;
@@ -39,50 +39,19 @@ form.addEventListener("submit", (e) => {
   addTodo(uid, text).catch(showError);
 });
 
-function startDrag(e, li, id) {
-  e.preventDefault();
-  const handle = e.currentTarget;
-  handle.setPointerCapture(e.pointerId);
-  li.classList.add("dragging");
-  dragging = { li, id, handle };
-  handle.addEventListener("pointermove", onDragMove);
-  handle.addEventListener("pointerup", endDrag);
-  handle.addEventListener("pointercancel", endDrag);
-}
-
-function onDragMove(e) {
-  const { li } = dragging;
-  // Insert before the first item whose middle is below the pointer
-  const next = [...list.children].find((el) => {
-    if (el === li) return false;
-    const r = el.getBoundingClientRect();
-    return e.clientY < r.top + r.height / 2;
-  });
-  list.insertBefore(li, next || null);
-}
-
-function endDrag() {
-  const { li, id, handle } = dragging;
-  handle.removeEventListener("pointermove", onDragMove);
-  handle.removeEventListener("pointerup", endDrag);
-  handle.removeEventListener("pointercancel", endDrag);
-  li.classList.remove("dragging");
-  dragging = null;
-
-  const ids = [...list.children].map((el) => el.dataset.id);
-  const index = ids.indexOf(id);
-  if (todos[index] && todos[index].id === id) {
+makeSortable(list, (id, ids) => {
+  if (!ids) {
     render(todos);
     return;
   }
-
+  const index = ids.indexOf(id);
   const find = (x) => todos.find((t) => t.id === x);
   const order = orderBetween(find(ids[index - 1]), find(ids[index + 1]));
-  setOrder(uid, id, order).catch((err) => {
-    showError(err);
-    render(todos);
-  });
-}
+
+  // Update the screen right away instead of waiting for Firestore
+  render(sortTodos(todos.map((t) => (t.id === id ? { ...t, order } : t))));
+  setOrder(uid, id, order).catch(showError);
+});
 
 function renderTodo(todo) {
   const li = document.createElement("li");
@@ -93,7 +62,6 @@ function renderTodo(todo) {
   handle.className = "handle";
   handle.textContent = "⋮⋮";
   handle.title = "Kéo để sắp xếp";
-  handle.addEventListener("pointerdown", (e) => startDrag(e, li, todo.id));
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -120,8 +88,8 @@ function renderTodo(todo) {
 
 function render(next) {
   todos = next;
-  // Don't rebuild the list mid-drag; endDrag or the next snapshot will render
-  if (dragging) return;
+  // Don't rebuild the list mid-drag; the drop handler will render
+  if (isDragging()) return;
   list.replaceChildren(...todos.map(renderTodo));
   empty.hidden = todos.length > 0;
   const left = todos.filter((t) => !t.done).length;
