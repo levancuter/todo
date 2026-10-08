@@ -1,4 +1,6 @@
+import { categoryOf } from "./category.js";
 import { estimateOf, parseEstimate } from "./hours.js";
+import { REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "./routines.js";
 
 const SAVE_DELAY_MS = 500;
 
@@ -9,6 +11,9 @@ const doneBox = $("detail-done");
 const textInput = $("detail-text");
 const estimateInput = $("detail-estimate");
 const noteInput = $("detail-note");
+const categoryInput = $("detail-category");
+const repeatInput = $("detail-repeat");
+const daysBox = $("detail-days");
 const created = $("detail-created");
 const saveStatus = $("detail-status");
 
@@ -17,8 +22,11 @@ let shown = null; // the open todo, with local edits applied
 let pending = {}; // edited fields not yet sent
 let timer = null;
 let saving = 0;
+let routine = null; // routine of the open todo, if any
+let customPicked = false; // keep the day buttons open after picking "custom"
 
-// handlers: onSave(id, fields) -> Promise, onDone(id, done), onDelete(id), onClose(), onError(err)
+// handlers: onSave(id, fields) -> Promise, onDone(id, done), onRepeat(id, days | null),
+// onDelete(id), onClose(), onError(err)
 export function initDetail(h) {
   handlers = h;
 
@@ -27,16 +35,24 @@ export function initDetail(h) {
   watch(noteInput, "note", () => noteInput.value);
 
   doneBox.addEventListener("change", () => handlers.onDone(shown.id, doneBox.checked));
+  categoryInput.addEventListener("change", () => {
+    pending.category = categoryInput.value;
+    flush();
+  });
+  repeatInput.addEventListener("change", onRepeatChange);
+  daysBox.addEventListener("click", onDayClick);
   $("detail-delete").addEventListener("click", () => handlers.onDelete(shown.id));
   $("detail-close").addEventListener("click", () => handlers.onClose());
 }
 
-export function showDetail(todo) {
+export function showDetail(todo, todoRoutine) {
   if (shown?.id !== todo.id) {
     flush();
     saveStatus.textContent = "";
+    customPicked = false;
   }
   shown = { ...todo, ...pending };
+  routine = todoRoutine || null;
   fill();
   panel.hidden = false;
   document.body.classList.add("detail-open");
@@ -51,6 +67,7 @@ export function hideDetail(discard = false) {
     flush();
   }
   shown = null;
+  routine = null;
   panel.hidden = true;
   document.body.classList.remove("detail-open");
 }
@@ -91,11 +108,41 @@ function flush() {
     });
 }
 
+function onRepeatChange() {
+  const mode = repeatInput.value;
+  customPicked = mode === "custom";
+  if (mode === "none") handlers.onRepeat(shown.id, null);
+  if (mode === "daily") handlers.onRepeat(shown.id, REPEAT_DAILY);
+  if (mode === "weekdays") handlers.onRepeat(shown.id, REPEAT_WEEKDAYS);
+  if (mode === "custom") {
+    if (!routine) handlers.onRepeat(shown.id, [new Date().getDay()]);
+    fill();
+  }
+}
+
+function onDayClick(e) {
+  const button = e.target.closest("button");
+  if (!button) return;
+  const day = Number(button.dataset.day);
+  const days = routine ? routine.days : [];
+  const next = days.includes(day) ? days.filter((d) => d !== day) : [...days, day];
+  if (next.length === 0) customPicked = false;
+  handlers.onRepeat(shown.id, next.length ? next.sort((a, b) => a - b) : null);
+}
+
 function fill() {
   setValue(textInput, shown.text);
   setValue(estimateInput, String(estimateOf(shown)));
   setValue(noteInput, shown.note || "");
   doneBox.checked = shown.done;
+  categoryInput.value = categoryOf(shown);
+  const days = routine ? routine.days : [];
+  const mode = customPicked ? "custom" : repeatMode(days);
+  repeatInput.value = mode;
+  daysBox.hidden = mode !== "custom";
+  for (const button of daysBox.children) {
+    button.setAttribute("aria-pressed", days.includes(Number(button.dataset.day)));
+  }
   // createdAt is null until the server confirms a new todo
   created.textContent = shown.createdAt
     ? "Tạo ngày " + shown.createdAt.toDate().toLocaleDateString("vi-VN")

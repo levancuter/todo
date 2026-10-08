@@ -6,6 +6,7 @@
   --border: #e0e0e5;
   --accent: #2563eb;
   --danger: #dc2626;
+  --life: #16a34a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,6 +18,7 @@
     --border: #2e2e33;
     --accent: #60a5fa;
     --danger: #f87171;
+    --life: #4ade80;
   }
 }
 
@@ -91,10 +93,56 @@ button.link {
   outline-offset: -1px;
 }
 
+#tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+#tabs button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+}
+
+#tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+#day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+#day-nav button:disabled {
+  visibility: hidden;
+}
+
+#add-form[hidden] {
+  display: none;
+}
+
 #hours {
   margin: 12px 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+#hours .warn {
+  color: var(--danger);
+  font-weight: 600;
 }
 
 #todo-list {
@@ -172,6 +220,41 @@ li.lifted .handle {
   flex: 1;
   word-break: break-word;
   cursor: pointer;
+}
+
+.tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.tag.missed {
+  color: var(--danger);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.dot.work {
+  background: var(--accent);
+}
+
+.dot.life {
+  background: var(--life);
+}
+
+li.readonly .text {
+  cursor: default;
 }
 
 .estimate {
@@ -284,6 +367,7 @@ button.icon:hover {
 
 #detail input[type="text"],
 #detail input[type="number"],
+#detail select,
 #detail textarea {
   font: inherit;
   color: var(--text);
@@ -319,6 +403,31 @@ button.icon:hover {
 
 #detail-estimate {
   width: 90px;
+}
+
+#detail-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#detail-days[hidden] {
+  display: none;
+}
+
+#detail-days button {
+  min-width: 40px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+}
+
+#detail-days button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .detail-meta {

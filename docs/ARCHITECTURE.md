@@ -41,6 +41,7 @@ users/{uid}/routines/{routineId}    // mẫu việc lặp lại
   estimate: number
   category: string
   days: number[]     // thứ trong tuần, 0 = CN ... 6 = T7
+  lastCreated: string       // ngày gần nhất đã tạo việc "YYYY-MM-DD"
   createdAt: timestamp
 
 users/{uid}/meta/app                // cờ nâng cấp dữ liệu
@@ -88,6 +89,7 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 | Mẫu lặp lại | listener toàn bộ `routines` (ít document) |
 | Lịch sử ngày D | đọc một lần `where("doneDate", "==", D)` và `where("date", "==", D)` khi mở ngày đó |
 
+- Tick một việc làm nó chuyển từ query này sang query kia, cả hai listener đều báo, mỗi cái trong một task riêng. `watchTodos` đợi cả hai rồi mới gọi callback, nếu không thì giữa chừng việc đó trông như bị xóa.
 - Mỗi lần mở app chỉ đọc khoảng 20–30 document. Ước tính khoảng 1.000–2.000 lượt đọc mỗi ngày, không tăng theo thời gian.
 - Chỉ dùng điều kiện `==` trên một field, Firestore tự có index, không cần tạo composite index.
 - Ghi: tick, kéo thả, tự lưu, tạo việc lặp lại khoảng vài trăm lượt mỗi ngày.
@@ -95,7 +97,8 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 ## Việc lặp lại
 
 - Đặt lặp lại cho một việc: tạo document trong `routines`, rồi gán `routineId` và `date` = hôm nay cho việc đó.
-- Mỗi lần mở app hoặc sang ngày mới: với mỗi mẫu có thứ hôm nay trong `days`, nếu chưa có việc nào có `routineId` đó và `date` = hôm nay thì tạo mới.
+- Mỗi lần mở app hoặc sang ngày mới: tạo việc cho mẫu có thứ hôm nay trong `days` và `lastCreated` < hôm nay. Mẫu Công việc bỏ qua thứ 7, CN.
+- Tạo việc và ghi `lastCreated` = hôm nay trong cùng một batch. Dựa vào `lastCreated` chứ không dựa vào danh sách việc, nên xóa việc lặp lại của hôm nay thì không bị tạo lại.
 - Việc tạo từ mẫu có ID cố định `{routineId}_{date}`. Hai thiết bị cùng tạo thì ghi vào cùng một document, không bị trùng.
 - Chỉ tạo khi dữ liệu đã tải từ server (`snapshot.metadata.fromCache` = false). Nếu tạo dựa trên cache cũ, thiết bị có thể ghi đè việc đã tick xong trên máy khác.
 - Sửa tên, giờ hoặc loại của việc lặp lại hôm nay thì cập nhật luôn mẫu.

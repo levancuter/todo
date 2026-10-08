@@ -24,6 +24,16 @@
       </section>
 
       <section id="todo-view" hidden>
+        <nav id="tabs">
+          <button data-tab="work">Công việc</button>
+          <button data-tab="life">Cuộc sống</button>
+          <button data-tab="all">Tất cả</button>
+        </nav>
+        <div id="day-nav">
+          <button id="prev-day" class="icon" title="Ngày trước">←</button>
+          <span id="day-label"></span>
+          <button id="next-day" class="icon" title="Ngày sau">→</button>
+        </div>
         <form id="add-form">
           <input id="new-todo" type="text" placeholder="Thêm việc mới..." autocomplete="off" />
         </form>
@@ -50,6 +60,31 @@
           giờ
         </span>
       </label>
+      <label>
+        Loại
+        <select id="detail-category">
+          <option value="work">Công việc</option>
+          <option value="life">Cuộc sống</option>
+        </select>
+      </label>
+      <label>
+        Lặp lại
+        <select id="detail-repeat">
+          <option value="none">Không lặp lại</option>
+          <option value="daily">Hằng ngày</option>
+          <option value="weekdays">Thứ 2 – Thứ 6</option>
+          <option value="custom">Chọn thứ</option>
+        </select>
+      </label>
+      <div id="detail-days" hidden>
+        <button type="button" data-day="1">T2</button>
+        <button type="button" data-day="2">T3</button>
+        <button type="button" data-day="3">T4</button>
+        <button type="button" data-day="4">T5</button>
+        <button type="button" data-day="5">T6</button>
+        <button type="button" data-day="6">T7</button>
+        <button type="button" data-day="0">CN</button>
+      </div>
       <label>
         Ghi chú
         <textarea id="detail-note" rows="10" placeholder="Thêm ghi chú..."></textarea>
