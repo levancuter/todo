@@ -65,16 +65,84 @@ npm run test:ui   # test giao diện, cần Google Chrome
 File `.github/workflows/ci.yml`:
 
 - Pull request: test → build → deploy lên kênh `preview`, link được comment vào PR.
-- Push hoặc merge vào `main`: test → build → deploy bản thật.
+- Merge vào `main`: test → build → deploy bản thật.
 - Test fail thì không deploy.
 
-Thiết lập một lần:
+### 7.1. Secret deploy Firebase
 
-1. Chạy `firebase init hosting:github`, chọn repo `levancuter/todo`. Lệnh này tạo service account và secret `FIREBASE_SERVICE_ACCOUNT_TODO_APP_C2694` trên GitHub. Nó cũng tạo file `firebase-hosting-*.yml`: xóa đi, chỉ dùng `ci.yml`.
-2. GitHub → Settings → Secrets and variables → Actions → tab **Variables**: thêm 6 biến `VITE_FIREBASE_*` giống file `.env`.
-3. Sau PR đầu tiên, thêm domain preview (vd `todo-app-c2694--preview-xxxx.web.app`) vào Firebase Console → Authentication → Settings → **Authorized domains**, để đăng nhập Google được.
+Chạy trong terminal (cần `firebase login` trước):
+
+```
+firebase init hosting:github
+```
+
+Trả lời các câu hỏi:
+
+| Câu hỏi | Trả lời |
+|---|---|
+| GitHub repository | `levancuter/todo` |
+| Set up the workflow to run a build script before every deploy? | Tùy, file này sẽ bị xóa |
+| Set up automatic deployment ... when a PR is merged? | `No` |
+
+- Lệnh mở trình duyệt để đăng nhập GitHub, rồi tạo service account và secret `FIREBASE_SERVICE_ACCOUNT_TODO_APP_C2694` trên repo.
+- Lệnh tạo thêm file `.github/workflows/firebase-hosting-*.yml`: xóa đi, không commit. Chỉ dùng `ci.yml`.
+
+### 7.2. Biến build
+
+GitHub → repo → Settings → Secrets and variables → Actions → tab **Variables** → New repository variable. Thêm 6 biến, giá trị giống file `.env`:
+
+```
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+```
+
+Có thể làm trong VS Code bằng extension **GitHub Actions** (của GitHub): mục *Settings* → *Variables*.
+
+### 7.3. Đăng nhập trên bản preview
+
+Sau PR đầu tiên, lấy domain preview trong comment của PR (vd `todo-app-c2694--preview-xxxx.web.app`), thêm vào Firebase Console → Authentication → Settings → **Authorized domains**. Chỉ làm một lần vì mọi PR dùng chung kênh `preview`.
+
+### 7.4. Chặn push thẳng vào `main`
+
+Cần repo public (repo private phải có GitHub Pro).
+
+1. Settings → General → Danger Zone → Change visibility → **Public**.
+2. Settings → Rules → Rulesets → **New branch ruleset**:
+   - Target: Include default branch.
+   - Bật **Require a pull request before merging**, số approval để `0`.
+   - Bật **Require status checks to pass**, thêm check `test`. Check này chỉ hiện sau khi workflow chạy ít nhất một lần.
+   - Bật **Block force pushes** và **Restrict deletions**.
+   - Để trống **Bypass list**, để luật áp dụng cả với chủ repo.
+
+### 7.5. Ẩn email trong commit
+
+Repo public thì ai cũng thấy email của commit.
+
+1. GitHub → Settings → Emails: bật **Keep my email addresses private** và **Block command line pushes that expose my email**.
+2. Đổi email git sang địa chỉ noreply hiện trên trang đó:
+
+```
+git config --global user.email "221241714+levancuter@users.noreply.github.com"
+```
+
+Commit cũ vẫn giữ email cũ.
+
+### 7.6. Làm việc hằng ngày
+
+```
+git checkout -b feature/ten-chuc-nang
+# sửa code, chạy npm test và npm run test:ui
+git push -u origin feature/ten-chuc-nang
+```
+
+Sau đó tạo Pull Request trên GitHub (hoặc extension **GitHub Pull Requests** trong VS Code) → đợi CI xanh → thử link preview → Merge. Merge xong CI tự deploy bản thật.
 
 Lưu ý:
 
 - Bản preview dùng chung Firestore với bản thật.
 - Mọi PR dùng chung kênh `preview`, PR push sau cùng sẽ hiện trên đó.
+- CI không deploy Firestore rules (xem mục 5).
