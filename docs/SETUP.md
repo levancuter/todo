@@ -41,9 +41,40 @@ npm run dev
 
 ## 5. Deploy
 
+Thường CI/CD tự deploy (mục 7). Khi cần deploy tay:
+
 ```
 npm run build
 firebase deploy
 ```
 
-Lệnh này deploy cả Hosting và Firestore rules.
+Lệnh này deploy cả Hosting và Firestore rules. CI chỉ deploy Hosting, nên khi sửa `firestore.rules` thì chạy `firebase deploy --only firestore:rules`.
+
+## 6. Test
+
+```
+npm test          # unit test
+npm run test:ui   # test giao diện, cần Google Chrome
+```
+
+- Test giao diện chạy app thật với Firebase giả lập trong bộ nhớ (`tests/ui/mock`), không đụng dữ liệu thật.
+- Không tìm thấy Chrome thì đặt biến `CHROME_PATH` trỏ tới file chạy Chrome.
+
+## 7. CI/CD (GitHub Actions)
+
+File `.github/workflows/ci.yml`:
+
+- Pull request: test → build → deploy lên kênh `preview`, link được comment vào PR.
+- Push hoặc merge vào `main`: test → build → deploy bản thật.
+- Test fail thì không deploy.
+
+Thiết lập một lần:
+
+1. Chạy `firebase init hosting:github`, chọn repo `levancuter/todo`. Lệnh này tạo service account và secret `FIREBASE_SERVICE_ACCOUNT_TODO_APP_C2694` trên GitHub. Nó cũng tạo file `firebase-hosting-*.yml`: xóa đi, chỉ dùng `ci.yml`.
+2. GitHub → Settings → Secrets and variables → Actions → tab **Variables**: thêm 6 biến `VITE_FIREBASE_*` giống file `.env`.
+3. Sau PR đầu tiên, thêm domain preview (vd `todo-app-c2694--preview-xxxx.web.app`) vào Firebase Console → Authentication → Settings → **Authorized domains**, để đăng nhập Google được.
+
+Lưu ý:
+
+- Bản preview dùng chung Firestore với bản thật.
+- Mọi PR dùng chung kênh `preview`, PR push sau cùng sẽ hiện trên đó.
