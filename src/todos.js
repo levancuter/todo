@@ -3,36 +3,105 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
+  getDocs,
   onSnapshot,
+  query,
   serverTimestamp,
   updateDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
+import { categoryOf } from "./category.js";
+import { dayKey } from "./dates.js";
 import { db } from "./firebase.js";
-import { DEFAULT_ESTIMATE } from "./hours.js";
+import { DEFAULT_ESTIMATE, estimateOf } from "./hours.js";
 import { sortTodos } from "./order.js";
 
 function todosRef(uid) {
   return collection(db, "users", uid, "todos");
 }
 
-// Sorted on the client so old todos without `order` are still included
-export function watchTodos(uid, callback, onError) {
+function routinesRef(uid) {
+  return collection(db, "users", uid, "routines");
+}
+
+function toList(snap) {
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+function mergeById(snaps) {
+  const byId = new Map();
+  snaps.forEach((snap) => toList(snap).forEach((t) => byId.set(t.id, t)));
+  return sortTodos([...byId.values()]);
+}
+
+// Loads only open todos and todos done today, so reads don't grow with history.
+// callback(todos) runs once both queries have results.
+export function watchTodos(uid, today, callback, onError) {
+  const queries = [
+    query(todosRef(uid), where("done", "==", false)),
+    query(todosRef(uid), where("doneDate", "==", today)),
+  ];
+  const snaps = [null, null];
+  let timer = null;
+  const unsubs = queries.map((q, i) =>
+    onSnapshot(
+      q,
+      (snap) => {
+        snaps[i] = snap;
+        if (!snaps.every(Boolean)) return;
+        // Ticking a todo moves it between the queries and both fire, each in
+        // its own task. Wait for both, or the todo looks deleted in between.
+        clearTimeout(timer);
+        timer = setTimeout(() => callback(mergeById(snaps)));
+      },
+      onError,
+    ),
+  );
+  return () => {
+    clearTimeout(timer);
+    unsubs.forEach((unsub) => unsub());
+  };
+}
+
+// callback(routines, fromServer). Metadata changes are needed to learn when
+// the data stops coming from the cache.
+export function watchRoutines(uid, callback, onError) {
   return onSnapshot(
-    todosRef(uid),
-    (snap) => callback(sortTodos(snap.docs.map((d) => ({ id: d.id, ...d.data() })))),
+    routinesRef(uid),
+    { includeMetadataChanges: true },
+    (snap) => callback(toList(snap), !snap.metadata.fromCache),
     onError,
   );
 }
 
-export function addTodo(uid, text) {
-  return addDoc(todosRef(uid), {
-    text,
+// One-time read for the history view
+export async function loadDay(uid, day) {
+  const snaps = await Promise.all([
+    getDocs(query(todosRef(uid), where("doneDate", "==", day))),
+    getDocs(query(todosRef(uid), where("date", "==", day))),
+  ]);
+  return mergeById(snaps);
+}
+
+function newTodo(fields) {
+  return {
     done: false,
+    doneDate: null,
     order: Date.now(),
     createdAt: serverTimestamp(),
     estimate: DEFAULT_ESTIMATE,
     note: "",
-  });
+    category: "work",
+    routineId: null,
+    date: null,
+    ...fields,
+  };
+}
+
+export function addTodo(uid, text, category) {
+  return addDoc(todosRef(uid), newTodo({ text, category }));
 }
 
 export function updateTodo(uid, id, fields) {
@@ -40,13 +109,73 @@ export function updateTodo(uid, id, fields) {
 }
 
 export function setOrder(uid, id, order) {
-  return updateDoc(doc(todosRef(uid), id), { order });
+  return updateTodo(uid, id, { order });
 }
 
-export function setDone(uid, id, done) {
-  return updateDoc(doc(todosRef(uid), id), { done });
+export function setDone(uid, id, done, today) {
+  return updateTodo(uid, id, { done, doneDate: done ? today : null });
 }
 
 export function removeTodo(uid, id) {
   return deleteDoc(doc(todosRef(uid), id));
+}
+
+// Fixed id: two devices creating the same routine todo write one document
+export function createRoutineTodo(uid, routine, today) {
+  const batch = writeBatch(db);
+  batch.set(
+    doc(todosRef(uid), `${routine.id}_${today}`),
+    newTodo({
+      text: routine.text,
+      estimate: routine.estimate,
+      category: routine.category,
+      routineId: routine.id,
+      date: today,
+    }),
+  );
+  batch.update(doc(routinesRef(uid), routine.id), { lastCreated: today });
+  return batch.commit();
+}
+
+// Turns a todo into today's todo of a new routine
+export function startRoutine(uid, todo, days, today) {
+  const routine = doc(routinesRef(uid));
+  const batch = writeBatch(db);
+  batch.set(routine, {
+    text: todo.text,
+    estimate: estimateOf(todo),
+    category: categoryOf(todo),
+    days,
+    lastCreated: today,
+    createdAt: serverTimestamp(),
+  });
+  batch.update(doc(todosRef(uid), todo.id), { routineId: routine.id, date: today });
+  return batch.commit();
+}
+
+export function updateRoutine(uid, id, fields) {
+  return updateDoc(doc(routinesRef(uid), id), fields);
+}
+
+// Deletes the routine; the todo stays as a normal todo
+export function stopRoutine(uid, todo) {
+  const batch = writeBatch(db);
+  batch.delete(doc(routinesRef(uid), todo.routineId));
+  batch.update(doc(todosRef(uid), todo.id), { routineId: null, date: null });
+  return batch.commit();
+}
+
+// v2 todos marked done have no `doneDate`, so the day queries can't find them
+export async function migrateV3(uid) {
+  const meta = doc(db, "users", uid, "meta", "app");
+  if ((await getDoc(meta)).data()?.migratedV3) return;
+  const snap = await getDocs(query(todosRef(uid), where("done", "==", true)));
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => {
+    const { doneDate, createdAt } = d.data();
+    if (doneDate) return;
+    batch.update(d.ref, { doneDate: dayKey(createdAt ? createdAt.toDate() : new Date()) });
+  });
+  batch.set(meta, { migratedV3: true }, { merge: true });
+  await batch.commit();
 }

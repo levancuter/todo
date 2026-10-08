@@ -23,7 +23,7 @@
 - Tự lưu khi ngừng gõ, hiện "Đang lưu..." / "Đã lưu".
 - Đóng: nút ✕, phím Esc, hoặc bấm lại việc đang mở. Việc bị xóa thì panel tự đóng.
 
-## Phiên bản 3 (đang thiết kế)
+## Phiên bản 3
 
 ### Làm mới mỗi ngày
 
