@@ -31,11 +31,26 @@ users/{uid}/todos/{todoId}
   createdAt: timestamp
   estimate: number   // giờ dự kiến, mặc định 3
   note: string       // ghi chú, mặc định ""
+  category: string   // "work" | "life", mặc định "work"
+  doneDate: string | null   // ngày hoàn thành "YYYY-MM-DD", null nếu chưa xong
+  routineId: string | null  // mẫu lặp lại tạo ra việc này
+  date: string | null       // ngày của việc lặp lại "YYYY-MM-DD"
+
+users/{uid}/routines/{routineId}    // mẫu việc lặp lại
+  text: string
+  estimate: number
+  category: string
+  days: number[]     // thứ trong tuần, 0 = CN ... 6 = T7
+  createdAt: timestamp
+
+users/{uid}/meta/app                // cờ nâng cấp dữ liệu
+  migratedV3: boolean
 ```
 
 - Kéo thả: `order` mới = trung bình `order` của 2 việc liền kề, chỉ ghi 1 document.
 - Việc cũ chưa có `order` dùng `createdAt` thay thế.
-- Việc cũ chưa có `estimate` tính là 3, chưa có `note` tính là `""`. Không cần migrate.
+- Field mới thiếu ở việc cũ thì dùng mặc định: `estimate` 3, `note` `""`, `category` `"work"`. Không cần migrate.
+- Ngày luôn tính theo giờ máy người dùng, dạng chuỗi `YYYY-MM-DD`.
 
 ## Chi tiết việc
 
@@ -44,6 +59,55 @@ users/{uid}/todos/{todoId}
 - Khi Firestore gửi dữ liệu mới, không ghi đè ô đang được gõ (đang có focus).
 - `selectedId` không còn trong `todos` (bị xóa) thì đóng panel.
 - Tổng giờ tính trên client từ `todos`, không lưu vào Firestore.
+
+## Làm mới mỗi ngày
+
+Gói Spark không có tác vụ hẹn giờ trên server, nên không "dọn" dữ liệu lúc 0h. Danh sách được tính theo ngày, bằng query (xem mục Tải dữ liệu):
+
+- Hôm nay = việc chưa xong + việc có `doneDate` = hôm nay. Không tính việc lặp lại của ngày trước (lọc trên client).
+- Lịch sử ngày D = việc có `doneDate` = D + việc lặp lại có `date` = D mà chưa xong (ghi "chưa xong").
+- Tick xong thì ghi `doneDate` = hôm nay, bỏ tick thì ghi `null`.
+- Nhãn `từ 07/10`: việc chưa xong có `createdAt` trước hôm nay.
+- Mỗi phút và khi quay lại tab (`visibilitychange`), app kiểm tra xem đã sang ngày mới chưa. Sang ngày mới thì đăng ký lại listener `doneDate`.
+- Lịch sử chỉ để xem, không sửa.
+- Việc cũ đã xong chưa có `doneDate` thì không query được. Lần đầu chạy v3, app gán `doneDate` theo ngày `createdAt` cho các việc này (vài chục document), rồi lưu cờ vào `users/{uid}/meta/app` để không chạy lại.
+
+## Tải dữ liệu
+
+Gói Spark giới hạn 50.000 lượt đọc và 20.000 lượt ghi mỗi ngày. Cách tính lượt đọc:
+
+- Listener tốn 1 lượt đọc cho mỗi document trả về, và 1 lượt cho mỗi document thay đổi.
+- Mất kết nối hơn 30 phút (đóng app, tắt máy) thì lần mở sau bị tính đọc lại toàn bộ kết quả, dù có cache offline.
+
+Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 tháng sẽ vượt hạn mức. Vì vậy chỉ tải phần cần hiển thị:
+
+| Dữ liệu | Cách tải |
+|---|---|
+| Việc chưa xong | listener `where("done", "==", false)` |
+| Việc xong hôm nay | listener `where("doneDate", "==", hôm nay)` |
+| Mẫu lặp lại | listener toàn bộ `routines` (ít document) |
+| Lịch sử ngày D | đọc một lần `where("doneDate", "==", D)` và `where("date", "==", D)` khi mở ngày đó |
+
+- Mỗi lần mở app chỉ đọc khoảng 20–30 document. Ước tính khoảng 1.000–2.000 lượt đọc mỗi ngày, không tăng theo thời gian.
+- Chỉ dùng điều kiện `==` trên một field, Firestore tự có index, không cần tạo composite index.
+- Ghi: tick, kéo thả, tự lưu, tạo việc lặp lại khoảng vài trăm lượt mỗi ngày.
+
+## Việc lặp lại
+
+- Đặt lặp lại cho một việc: tạo document trong `routines`, rồi gán `routineId` và `date` = hôm nay cho việc đó.
+- Mỗi lần mở app hoặc sang ngày mới: với mỗi mẫu có thứ hôm nay trong `days`, nếu chưa có việc nào có `routineId` đó và `date` = hôm nay thì tạo mới.
+- Việc tạo từ mẫu có ID cố định `{routineId}_{date}`. Hai thiết bị cùng tạo thì ghi vào cùng một document, không bị trùng.
+- Chỉ tạo khi dữ liệu đã tải từ server (`snapshot.metadata.fromCache` = false). Nếu tạo dựa trên cache cũ, thiết bị có thể ghi đè việc đã tick xong trên máy khác.
+- Sửa tên, giờ hoặc loại của việc lặp lại hôm nay thì cập nhật luôn mẫu.
+- Tắt lặp lại: xóa document mẫu. Các việc đã tạo vẫn giữ nguyên.
+
+## Công việc và Cuộc sống
+
+- Giờ làm cố định trong code: thứ 2 đến thứ 6, `9–12` và `13–18`.
+- `isWorkTime(now)`: đang trong giờ làm hay không. Dùng để chọn tab mặc định khi mở app, và chọn loại khi tạo việc ở tab Tất cả.
+- `workHoursLeft(now)`: số giờ làm còn lại hôm nay, không tính nghỉ trưa. Ví dụ 11h còn 6h, 12h30 còn 5h, sau 18h hoặc cuối tuần còn 0h.
+- Cảnh báo khi giờ việc Công việc còn lại > `workHoursLeft`.
+- Tab đang chọn chỉ lưu trên máy (biến trong `main.js`), không lưu Firestore.
 
 ## Bảo mật
 
