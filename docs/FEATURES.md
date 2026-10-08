@@ -8,7 +8,7 @@
 - Tự động lưu: tải lại trang không mất dữ liệu.
 - Sắp xếp ưu tiên: kéo thả bằng tay cầm ⋮⋮, việc ở trên ưu tiên cao hơn. Dùng được cả chuột và cảm ứng.
 
-## Phiên bản 2 (đang thiết kế)
+## Phiên bản 2
 
 ### Giờ công
 
