@@ -120,16 +120,20 @@ Cần repo public (repo private phải có GitHub Pro).
 
 ### 7.5. Ẩn email trong commit
 
-Repo public thì ai cũng thấy email của commit.
+Repo public thì ai cũng thấy email của commit. GitHub có sẵn địa chỉ noreply dạng `ID+username@users.noreply.github.com` để dùng thay.
 
-1. GitHub → Settings → Emails: bật **Keep my email addresses private** và **Block command line pushes that expose my email**.
-2. Đổi email git sang địa chỉ noreply hiện trên trang đó:
+1. Mở https://github.com/settings/emails (avatar → Settings → Access → Emails).
+2. Bật **Keep my email addresses private**. Địa chỉ noreply hiện ngay bên dưới.
+3. Đổi email git sang địa chỉ đó:
 
-```
-git config --global user.email "221241714+levancuter@users.noreply.github.com"
-```
+   ```
+   git config --global user.email "221241714+levancuter@users.noreply.github.com"
+   ```
 
-Commit cũ vẫn giữ email cũ.
+4. Commit chưa push mà còn email cũ thì đổi lại: `git commit --amend --reset-author --no-edit` (commit cuối) hoặc `git rebase -r <commit-gốc> --exec "git commit --amend --reset-author --no-edit"` (nhiều commit).
+5. (Nên) Bật **Block command line pushes that expose my email**. Ô này chỉ hiện sau bước 2. Khi bật, GitHub từ chối push nếu commit còn email thật (lỗi `GH007`), tránh lộ email khi quên đổi `user.email` trên máy khác.
+
+Commit đã push trước đó vẫn giữ email cũ.
 
 ### 7.6. Làm việc hằng ngày
 
