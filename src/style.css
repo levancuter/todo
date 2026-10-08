@@ -7,6 +7,7 @@
   --accent: #2563eb;
   --danger: #dc2626;
   --life: #16a34a;
+  --warn: #d97706;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,6 +20,7 @@
     --accent: #60a5fa;
     --danger: #f87171;
     --life: #4ade80;
+    --warn: #fbbf24;
   }
 }
 
@@ -236,6 +238,10 @@ li.lifted .handle {
   color: var(--danger);
 }
 
+.tag.due {
+  color: var(--warn);
+}
+
 .dot {
   display: inline-block;
   width: 8px;
@@ -367,6 +373,7 @@ button.icon:hover {
 
 #detail input[type="text"],
 #detail input[type="number"],
+#detail input[type="date"],
 #detail select,
 #detail textarea {
   font: inherit;
@@ -411,6 +418,7 @@ button.icon:hover {
   gap: 6px;
 }
 
+#detail-deadline-row[hidden],
 #detail-days[hidden] {
   display: none;
 }

@@ -50,13 +50,20 @@
 - Tab Công việc so giờ việc còn lại với giờ làm còn lại hôm nay, ví dụ `Còn 6h việc · còn 3h làm việc`. Hiện màu cảnh báo nếu không kịp.
 - Việc lặp lại loại Công việc chỉ tạo vào thứ 2 đến thứ 6.
 
+## Phiên bản 4
+
+### Hạn chót
+
+- Đặt trong panel chi tiết, chỉ chọn ngày. Để trống là không có hạn.
+- Chỉ cho việc không lặp lại. Bật lặp lại thì hạn chót bị xóa.
+- Nhãn trong danh sách: `hạn 12/10` (xám), `hạn hôm nay` (cam), `quá hạn 07/10` (đỏ). Việc đã xong không hiện nhãn.
+
 ## Dự kiến
 
 - Giờ thực tế (so sánh với giờ dự kiến)
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
 - Ghi chú dạng nhật ký (nhiều ghi chú có thời gian)
 - Lọc: tất cả / đang làm / đã xong
-- Hạn chót
 - Nhóm hoặc tag
 - Xuất/nhập JSON để sao lưu
 - Đồng bộ nhiều thiết bị

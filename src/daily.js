@@ -12,6 +12,14 @@ export function carriedFrom(todo, today) {
   return day < today ? day : null;
 }
 
+// "overdue" | "today" | "upcoming", or null when there is nothing to show
+export function deadlineStatus(todo, today) {
+  if (todo.done || !todo.deadline) return null;
+  if (todo.deadline < today) return "overdue";
+  if (todo.deadline === today) return "today";
+  return "upcoming";
+}
+
 // Done that day, plus routine todos of that day left unfinished
 export function historyTodos(todos, day) {
   return todos.filter((t) => (t.done ? t.doneDate === day : t.date === day));

@@ -35,6 +35,7 @@ users/{uid}/todos/{todoId}
   doneDate: string | null   // ngày hoàn thành "YYYY-MM-DD", null nếu chưa xong
   routineId: string | null  // mẫu lặp lại tạo ra việc này
   date: string | null       // ngày của việc lặp lại "YYYY-MM-DD"
+  deadline: string | null   // hạn chót "YYYY-MM-DD", chỉ việc không lặp lại
 
 users/{uid}/routines/{routineId}    // mẫu việc lặp lại
   text: string
