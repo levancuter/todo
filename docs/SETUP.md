@@ -41,9 +41,112 @@ npm run dev
 
 ## 5. Deploy
 
+Thường CI/CD tự deploy (mục 7). Khi cần deploy tay:
+
 ```
 npm run build
 firebase deploy
 ```
 
-Lệnh này deploy cả Hosting và Firestore rules.
+Lệnh này deploy cả Hosting và Firestore rules. CI chỉ deploy Hosting, nên khi sửa `firestore.rules` thì chạy `firebase deploy --only firestore:rules`.
+
+## 6. Test
+
+```
+npm test          # unit test
+npm run test:ui   # test giao diện, cần Google Chrome
+```
+
+- Test giao diện chạy app thật với Firebase giả lập trong bộ nhớ (`tests/ui/mock`), không đụng dữ liệu thật.
+- Không tìm thấy Chrome thì đặt biến `CHROME_PATH` trỏ tới file chạy Chrome.
+
+## 7. CI/CD (GitHub Actions)
+
+File `.github/workflows/ci.yml`:
+
+- Pull request: test → build → deploy lên kênh `preview`, link được comment vào PR.
+- Merge vào `main`: test → build → deploy bản thật.
+- Test fail thì không deploy.
+
+### 7.1. Secret deploy Firebase
+
+Chạy trong terminal (cần `firebase login` trước):
+
+```
+firebase init hosting:github
+```
+
+Trả lời các câu hỏi:
+
+| Câu hỏi | Trả lời |
+|---|---|
+| GitHub repository | `levancuter/todo` |
+| Set up the workflow to run a build script before every deploy? | Tùy, file này sẽ bị xóa |
+| Set up automatic deployment ... when a PR is merged? | `No` |
+
+- Lệnh mở trình duyệt để đăng nhập GitHub, rồi tạo service account và secret `FIREBASE_SERVICE_ACCOUNT_TODO_APP_C2694` trên repo.
+- Lệnh tạo thêm file `.github/workflows/firebase-hosting-*.yml`: xóa đi, không commit. Chỉ dùng `ci.yml`.
+
+### 7.2. Biến build
+
+GitHub → repo → Settings → Secrets and variables → Actions → tab **Variables** → New repository variable. Thêm 6 biến, giá trị giống file `.env`:
+
+```
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+```
+
+Có thể làm trong VS Code bằng extension **GitHub Actions** (của GitHub): mục *Settings* → *Variables*.
+
+### 7.3. Đăng nhập trên bản preview
+
+Sau PR đầu tiên, lấy domain preview trong comment của PR (vd `todo-app-c2694--preview-xxxx.web.app`), thêm vào Firebase Console → Authentication → Settings → **Authorized domains**. Chỉ làm một lần vì mọi PR dùng chung kênh `preview`.
+
+### 7.4. Chặn push thẳng vào `main`
+
+Cần repo public (repo private phải có GitHub Pro).
+
+1. Settings → General → Danger Zone → Change visibility → **Public**.
+2. Settings → Rules → Rulesets → **New branch ruleset**:
+   - Target: Include default branch.
+   - Bật **Require a pull request before merging**, số approval để `0`.
+   - Bật **Require status checks to pass**, thêm check `test`. Check này chỉ hiện sau khi workflow chạy ít nhất một lần.
+   - Bật **Block force pushes** và **Restrict deletions**.
+   - Để trống **Bypass list**, để luật áp dụng cả với chủ repo.
+
+### 7.5. Ẩn email trong commit
+
+Repo public thì ai cũng thấy email của commit. GitHub có sẵn địa chỉ noreply dạng `ID+username@users.noreply.github.com` để dùng thay.
+
+1. Mở https://github.com/settings/emails (avatar → Settings → Access → Emails).
+2. Bật **Keep my email addresses private**. Địa chỉ noreply hiện ngay bên dưới.
+3. Đổi email git sang địa chỉ đó:
+
+   ```
+   git config --global user.email "221241714+levancuter@users.noreply.github.com"
+   ```
+
+4. Commit chưa push mà còn email cũ thì đổi lại: `git commit --amend --reset-author --no-edit` (commit cuối) hoặc `git rebase -r <commit-gốc> --exec "git commit --amend --reset-author --no-edit"` (nhiều commit).
+5. (Nên) Bật **Block command line pushes that expose my email**. Ô này chỉ hiện sau bước 2. Khi bật, GitHub từ chối push nếu commit còn email thật (lỗi `GH007`), tránh lộ email khi quên đổi `user.email` trên máy khác.
+
+Commit đã push trước đó vẫn giữ email cũ.
+
+### 7.6. Làm việc hằng ngày
+
+```
+git checkout -b feature/ten-chuc-nang
+# sửa code, chạy npm test và npm run test:ui
+git push -u origin feature/ten-chuc-nang
+```
+
+Sau đó tạo Pull Request trên GitHub (hoặc extension **GitHub Pull Requests** trong VS Code) → đợi CI xanh → thử link preview → Merge. Merge xong CI tự deploy bản thật.
+
+Lưu ý:
+
+- Bản preview dùng chung Firestore với bản thật.
+- Mọi PR dùng chung kênh `preview`, PR push sau cùng sẽ hiện trên đó.
+- CI không deploy Firestore rules (xem mục 5).
