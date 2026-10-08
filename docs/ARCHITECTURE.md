@@ -27,8 +27,12 @@ Trình duyệt (điện thoại / máy tính)
 users/{uid}/todos/{todoId}
   text: string
   done: boolean
+  order: number      // nhỏ hơn = ưu tiên cao hơn (hiển thị trên)
   createdAt: timestamp
 ```
+
+- Kéo thả: `order` mới = trung bình `order` của 2 việc liền kề, chỉ ghi 1 document.
+- Việc cũ chưa có `order` dùng `createdAt` thay thế.
 
 ## Bảo mật
 

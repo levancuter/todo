@@ -123,6 +123,27 @@ button.link {
   accent-color: var(--accent);
 }
 
+.handle {
+  color: var(--muted);
+  cursor: grab;
+  padding: 4px 2px;
+  letter-spacing: -3px;
+  user-select: none;
+  touch-action: none;
+}
+
+li.dragging {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  opacity: 0.9;
+}
+
+li.dragging .handle {
+  cursor: grabbing;
+}
+
 .text {
   flex: 1;
   word-break: break-word;
