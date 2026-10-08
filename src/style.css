@@ -91,9 +91,15 @@ button.link {
   outline-offset: -1px;
 }
 
+#hours {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 #todo-list {
   list-style: none;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   padding: 0;
   background: var(--card);
   border: 1px solid var(--border);
@@ -115,6 +121,19 @@ button.link {
 
 #todo-list li:first-child {
   border-top: none;
+  border-radius: 10px 10px 0 0;
+}
+
+#todo-list li:last-child {
+  border-radius: 0 0 10px 10px;
+}
+
+#todo-list li:only-child {
+  border-radius: 10px;
+}
+
+#todo-list li.selected {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
 }
 
 #todo-list input[type="checkbox"] {
@@ -152,6 +171,13 @@ li.lifted .handle {
 .text {
   flex: 1;
   word-break: break-word;
+  cursor: pointer;
+}
+
+.estimate {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }
 
 li.done .text {
@@ -177,4 +203,137 @@ li.done .text {
   color: var(--muted);
   font-size: 0.9rem;
   text-align: center;
+}
+
+#detail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+}
+
+#detail[hidden] {
+  display: none;
+}
+
+/* Wide screens: keep the list visible next to the panel */
+@media (min-width: 900px) {
+  body.detail-open {
+    padding-right: 376px;
+  }
+}
+
+/* Narrow screens: panel covers the whole screen */
+@media (max-width: 899px) {
+  #detail {
+    width: 100%;
+    border-left: none;
+  }
+}
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+button.icon {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+button.icon:hover {
+  color: var(--text);
+}
+
+.detail-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#detail-done {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+#detail label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+#detail input[type="text"],
+#detail input[type="number"],
+#detail textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+#detail #detail-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#detail textarea {
+  resize: vertical;
+}
+
+#detail input:focus,
+#detail textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.detail-estimate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+#detail-estimate {
+  width: 90px;
+}
+
+.detail-meta {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+button.danger {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  background: none;
+  color: var(--danger);
 }

@@ -1,8 +1,10 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { hideDetail, initDetail, showDetail } from "./detail.js";
 import { isDragging, makeSortable } from "./drag.js";
 import { auth, googleProvider } from "./firebase.js";
+import { estimateOf, formatHours, sumHours } from "./hours.js";
 import { orderBetween, sortTodos } from "./order.js";
-import { addTodo, removeTodo, setDone, setOrder, watchTodos } from "./todos.js";
+import { addTodo, removeTodo, setDone, setOrder, updateTodo, watchTodos } from "./todos.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,10 +17,12 @@ const input = $("new-todo");
 const list = $("todo-list");
 const empty = $("empty");
 const count = $("count");
+const hours = $("hours");
 
 let uid = null;
 let unsubscribe = null;
 let todos = [];
+let selectedId = null;
 
 function showError(err) {
   status.hidden = false;
@@ -53,9 +57,41 @@ makeSortable(list, (id, ids) => {
   setOrder(uid, id, order).catch(showError);
 });
 
+// Rebuilding the list between pointerdown and click would swallow the click
+// (e.g. a panel field saves on blur and Firestore sends a new snapshot)
+let pressed = false;
+list.addEventListener("pointerdown", () => {
+  pressed = true;
+});
+function release() {
+  if (!pressed) return;
+  pressed = false;
+  setTimeout(() => render(todos));
+}
+window.addEventListener("pointerup", release);
+window.addEventListener("pointercancel", release);
+
+function select(id) {
+  selectedId = id;
+  render(todos);
+}
+
+initDetail({
+  onSave: (id, fields) => updateTodo(uid, id, fields),
+  onDone: (id, done) => setDone(uid, id, done).catch(showError),
+  onDelete: (id) => removeTodo(uid, id).catch(showError),
+  onClose: () => select(null),
+  onError: showError,
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && selectedId) select(null);
+});
+
 function renderTodo(todo) {
   const li = document.createElement("li");
-  li.className = todo.done ? "done" : "";
+  li.classList.toggle("done", todo.done);
+  li.classList.toggle("selected", todo.id === selectedId);
   li.dataset.id = todo.id;
 
   const handle = document.createElement("span");
@@ -73,6 +109,11 @@ function renderTodo(todo) {
   const text = document.createElement("span");
   text.className = "text";
   text.textContent = todo.text;
+  text.addEventListener("click", () => select(todo.id === selectedId ? null : todo.id));
+
+  const estimate = document.createElement("span");
+  estimate.className = "estimate";
+  estimate.textContent = formatHours(estimateOf(todo));
 
   const del = document.createElement("button");
   del.className = "delete";
@@ -82,18 +123,32 @@ function renderTodo(todo) {
     removeTodo(uid, todo.id).catch(showError);
   });
 
-  li.append(handle, checkbox, text, del);
+  li.append(handle, checkbox, text, estimate, del);
   return li;
 }
 
 function render(next) {
   todos = next;
-  // Don't rebuild the list mid-drag; the drop handler will render
-  if (isDragging()) return;
+  // Don't rebuild the list mid-drag or mid-click; it renders again afterwards
+  if (isDragging() || pressed) return;
   list.replaceChildren(...todos.map(renderTodo));
   empty.hidden = todos.length > 0;
   const left = todos.filter((t) => !t.done).length;
   count.textContent = todos.length ? `Còn ${left} / ${todos.length} việc` : "";
+  const h = sumHours(todos);
+  hours.textContent = `Tổng ${formatHours(h.total)} · Còn ${formatHours(h.left)} · Xong ${formatHours(h.done)}`;
+  renderDetail();
+}
+
+function renderDetail() {
+  const todo = todos.find((t) => t.id === selectedId);
+  if (todo) {
+    showDetail(todo);
+    return;
+  }
+  // The open todo was deleted: drop its unsaved edits
+  hideDetail(selectedId !== null);
+  selectedId = null;
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -113,6 +168,8 @@ onAuthStateChanged(auth, (user) => {
     unsubscribe = watchTodos(uid, render, showError);
     input.focus();
   } else {
+    selectedId = null;
+    hideDetail(true);
     list.replaceChildren();
   }
 });

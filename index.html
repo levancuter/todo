@@ -27,11 +27,39 @@
         <form id="add-form">
           <input id="new-todo" type="text" placeholder="Thêm việc mới..." autocomplete="off" />
         </form>
+        <p id="hours"></p>
         <ul id="todo-list"></ul>
         <p id="empty" hidden>Chưa có việc nào.</p>
         <p id="count"></p>
       </section>
     </main>
+
+    <aside id="detail" hidden>
+      <div class="detail-head">
+        <span>Chi tiết</span>
+        <button id="detail-close" class="icon" title="Đóng">✕</button>
+      </div>
+      <div class="detail-title">
+        <input id="detail-done" type="checkbox" title="Hoàn thành" />
+        <input id="detail-text" type="text" autocomplete="off" />
+      </div>
+      <label>
+        Giờ dự kiến
+        <span class="detail-estimate">
+          <input id="detail-estimate" type="number" min="0" step="0.5" inputmode="decimal" />
+          giờ
+        </span>
+      </label>
+      <label>
+        Ghi chú
+        <textarea id="detail-note" rows="10" placeholder="Thêm ghi chú..."></textarea>
+      </label>
+      <p class="detail-meta">
+        <span id="detail-created"></span>
+        <span id="detail-status"></span>
+      </p>
+      <button id="detail-delete" class="danger">Xóa việc</button>
+    </aside>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

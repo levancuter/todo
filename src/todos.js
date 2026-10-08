@@ -8,6 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase.js";
+import { DEFAULT_ESTIMATE } from "./hours.js";
 import { sortTodos } from "./order.js";
 
 function todosRef(uid) {
@@ -29,7 +30,13 @@ export function addTodo(uid, text) {
     done: false,
     order: Date.now(),
     createdAt: serverTimestamp(),
+    estimate: DEFAULT_ESTIMATE,
+    note: "",
   });
+}
+
+export function updateTodo(uid, id, fields) {
+  return updateDoc(doc(todosRef(uid), id), fields);
 }
 
 export function setOrder(uid, id, order) {
