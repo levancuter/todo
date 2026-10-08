@@ -98,7 +98,6 @@ button.link {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
 }
 
 #todo-list:empty {
@@ -111,6 +110,7 @@ button.link {
   gap: 12px;
   padding: 12px 14px;
   border-top: 1px solid var(--border);
+  transition: transform 150ms ease;
 }
 
 #todo-list li:first-child {
@@ -121,6 +121,32 @@ button.link {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+}
+
+.handle {
+  color: var(--muted);
+  cursor: grab;
+  padding: 4px 2px;
+  letter-spacing: -3px;
+  user-select: none;
+  touch-action: none;
+}
+
+/* lifted: raised look for the whole drag; dragging: follows pointer with no lag */
+li.lifted {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+
+#todo-list li.dragging {
+  transition: none;
+}
+
+li.lifted .handle {
+  cursor: grabbing;
 }
 
 .text {

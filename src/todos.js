@@ -4,22 +4,21 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
-  query,
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase.js";
+import { sortTodos } from "./order.js";
 
 function todosRef(uid) {
   return collection(db, "users", uid, "todos");
 }
 
+// Sorted on the client so old todos without `order` are still included
 export function watchTodos(uid, callback, onError) {
-  const q = query(todosRef(uid), orderBy("createdAt", "asc"));
   return onSnapshot(
-    q,
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    todosRef(uid),
+    (snap) => callback(sortTodos(snap.docs.map((d) => ({ id: d.id, ...d.data() })))),
     onError,
   );
 }
@@ -28,8 +27,13 @@ export function addTodo(uid, text) {
   return addDoc(todosRef(uid), {
     text,
     done: false,
+    order: Date.now(),
     createdAt: serverTimestamp(),
   });
+}
+
+export function setOrder(uid, id, order) {
+  return updateDoc(doc(todosRef(uid), id), { order });
 }
 
 export function setDone(uid, id, done) {

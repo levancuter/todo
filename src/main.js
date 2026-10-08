@@ -1,6 +1,8 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { isDragging, makeSortable } from "./drag.js";
 import { auth, googleProvider } from "./firebase.js";
-import { addTodo, removeTodo, setDone, watchTodos } from "./todos.js";
+import { orderBetween, sortTodos } from "./order.js";
+import { addTodo, removeTodo, setDone, setOrder, watchTodos } from "./todos.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,6 +18,7 @@ const count = $("count");
 
 let uid = null;
 let unsubscribe = null;
+let todos = [];
 
 function showError(err) {
   status.hidden = false;
@@ -36,9 +39,29 @@ form.addEventListener("submit", (e) => {
   addTodo(uid, text).catch(showError);
 });
 
+makeSortable(list, (id, ids) => {
+  if (!ids) {
+    render(todos);
+    return;
+  }
+  const index = ids.indexOf(id);
+  const find = (x) => todos.find((t) => t.id === x);
+  const order = orderBetween(find(ids[index - 1]), find(ids[index + 1]));
+
+  // Update the screen right away instead of waiting for Firestore
+  render(sortTodos(todos.map((t) => (t.id === id ? { ...t, order } : t))));
+  setOrder(uid, id, order).catch(showError);
+});
+
 function renderTodo(todo) {
   const li = document.createElement("li");
   li.className = todo.done ? "done" : "";
+  li.dataset.id = todo.id;
+
+  const handle = document.createElement("span");
+  handle.className = "handle";
+  handle.textContent = "⋮⋮";
+  handle.title = "Kéo để sắp xếp";
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -59,11 +82,14 @@ function renderTodo(todo) {
     removeTodo(uid, todo.id).catch(showError);
   });
 
-  li.append(checkbox, text, del);
+  li.append(handle, checkbox, text, del);
   return li;
 }
 
-function render(todos) {
+function render(next) {
+  todos = next;
+  // Don't rebuild the list mid-drag; the drop handler will render
+  if (isDragging()) return;
   list.replaceChildren(...todos.map(renderTodo));
   empty.hidden = todos.length > 0;
   const left = todos.filter((t) => !t.done).length;
