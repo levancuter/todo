@@ -45,9 +45,9 @@ const setDeadline = async (value) => {
 
 test("list shows overdue, today and upcoming deadlines; none when done", async () => {
   assert.deepEqual(await tags("a"), []);
-  assert.deepEqual(await tags("b"), ["tag missed: quá hạn 07/10"]);
-  assert.deepEqual(await tags("c"), ["tag due: hạn hôm nay"]);
-  assert.deepEqual(await tags("d"), ["tag: hạn 12/10"]);
+  assert.deepEqual(await tags("b"), ["tag missed: Quá hạn 07/10"]);
+  assert.deepEqual(await tags("c"), ["tag due: Hạn hôm nay"]);
+  assert.deepEqual(await tags("d"), ["tag: Hạn 12/10"]);
   assert.deepEqual(await tags("e"), []);
 });
 
@@ -57,7 +57,7 @@ test("set a deadline in the panel", async () => {
   assert.equal(await ui.val("#detail-deadline"), "");
   await setDeadline("2026-10-15");
   assert.equal((await ui.get("todos/a")).deadline, "2026-10-15");
-  assert.deepEqual(await tags("a"), ["tag: hạn 15/10"]);
+  assert.deepEqual(await tags("a"), ["tag: Hạn 15/10"]);
   assert.equal(await ui.text("#detail-status"), "Đã lưu");
 });
 
@@ -81,7 +81,7 @@ test("turning on repeat clears the deadline", async () => {
   assert.equal((await ui.get("todos/d")).deadline, null);
   assert.ok((await ui.get("todos/d")).routineId);
   assert.equal(await ui.hidden("#detail-deadline-row"), true);
-  assert.deepEqual(await tags("d"), []);
+  assert.deepEqual(await tags("d"), ["tag repeat: Hằng ngày"]);
   await page.keyboard.press("Escape");
 });
 
@@ -99,7 +99,7 @@ test("ticking done hides the deadline tag", async () => {
 
 test("next day: today's deadline becomes overdue", async () => {
   await ui.refreshClock(at(9, 10));
-  assert.deepEqual(await tags("c"), ["tag: từ 08/10", "tag missed: quá hạn 08/10"]);
+  assert.deepEqual(await tags("c"), ["tag missed: Quá hạn 08/10", "tag: Từ 08/10"]);
 });
 
 test("no page errors", () => {

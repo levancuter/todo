@@ -65,7 +65,10 @@ users/{uid}/meta/app                // cờ nâng cấp dữ liệu
 ## Cấu trúc giao diện (React)
 
 - React 19, build bằng Vite (`@vitejs/plugin-react`).
-- `main.jsx` → `App.jsx` (đăng nhập) → `TodoView.jsx` (tab, ngày, danh sách, lịch sử, việc lặp lại) → `TodoItem.jsx`, `DetailPanel.jsx`.
+- `main.jsx` → `App.jsx` (đăng nhập, thanh trên cùng, nút gạt loại việc) → `TodoView.jsx` (ngày, danh sách, lịch sử, việc lặp lại) → `HoursCard.jsx`, `TodoItem.jsx`, `DetailPanel.jsx`.
+- `Icon.jsx`: icon SVG nét mảnh dùng chung, không dùng emoji.
+- Màu theo loại đang xem: `.app[data-tab]` đặt biến CSS `--cat` (tím chàm cho Công việc, xanh mòng két cho Cuộc sống). Có chế độ tối.
+- Panel chi tiết `position: fixed` đè lên bên phải, không đổi bố cục danh sách. Điện thoại: phủ toàn màn hình.
 - `hooks.js`: `useNow` (cập nhật mỗi phút và khi quay lại tab), `useTodos`, `useRoutines` (listener Firestore).
 - Các module logic thuần và `todos.js` không phụ thuộc React.
 - Kéo thả vẫn dùng `drag.js` (thao tác DOM trực tiếp). Thả xong, `TodoView` cập nhật thứ tự rồi xóa `transform` của các dòng.
@@ -118,10 +121,11 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 ## Công việc và Cuộc sống
 
 - Giờ làm cố định trong code: thứ 2 đến thứ 6, `9–12` và `13–18`.
-- `isWorkTime(now)`: đang trong giờ làm hay không. Dùng để chọn tab mặc định khi mở app, và chọn loại khi tạo việc ở tab Tất cả.
+- `isWorkTime(now)`: đang trong giờ làm hay không. Dùng để chọn loại mặc định khi mở app.
+- `WORK_HOURS_PER_DAY` = 8: tab Công việc so tổng giờ dự kiến với con số này.
 - `workHoursLeft(now)`: số giờ làm còn lại hôm nay, không tính nghỉ trưa. Ví dụ 11h còn 6h, 12h30 còn 5h, sau 18h hoặc cuối tuần còn 0h.
 - Cảnh báo khi giờ việc Công việc còn lại > `workHoursLeft`.
-- Tab đang chọn chỉ lưu trên máy (state trong `TodoView.jsx`), không lưu Firestore.
+- Loại đang xem chỉ lưu trên máy (state trong `App.jsx`), không lưu Firestore. Việc mới thuộc loại đang xem.
 
 ## Bảo mật
 

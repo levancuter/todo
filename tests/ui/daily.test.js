@@ -48,7 +48,7 @@ const added = async (text) => (await ui.writes()).find((w) => w[0] === "set" && 
 
 test("work time opens the Công việc tab; no routine todos from cache", async () => {
   assert.equal(await activeTab(), "work");
-  assert.equal(await ui.text("#day-label"), "Hôm nay · 08/10");
+  assert.equal(await ui.text("#day-label"), "Hôm nay · Thứ 5, 08/10");
   assert.equal(await ui.get("todos/r1_2026-10-08"), undefined);
   assert.equal(await ui.get("todos/r2_2026-10-08"), undefined);
 });
@@ -70,37 +70,38 @@ test("v2 done todos get doneDate from createdAt, once", async () => {
   assert.equal((await ui.get("meta/app")).migratedV3, true);
 });
 
-test("work tab: carried label, routine icon, hours and work time left", async () => {
+test("work tab: carried label, repeat label, hours against 8h and work time left", async () => {
   assert.deepEqual(await ui.ids(), ["a", "d", "r2_2026-10-08"]);
   const texts = await ui.texts();
-  assert.match(texts[0], /Việc cũ không loại\s*từ 06\/10/);
-  assert.match(texts[2], /^🔁 Daily standup/);
-  assert.equal(await ui.text("#hours"), "Tổng 5.5h · Còn 3.5h · Xong 2h · Giờ làm còn 7h");
-  assert.equal(await page.$("#hours .warn"), null);
+  assert.match(texts[0], /^Việc cũ không loại\s*Từ 06\/10$/);
+  assert.match(texts[2], /^Daily standup\s*T2–T6$/);
+  assert.equal(await ui.text("#hours-total"), "5.5h");
+  assert.equal(await ui.text("#hours-cap"), "/ 8h kế hoạch");
+  assert.equal(await ui.text("#hours-detail"), "Xong 2h · Còn 3.5h việc");
+  assert.equal(await ui.text("#work-left"), "Còn 7h giờ làm");
+  assert.equal(await page.$("#work-left.warn"), null);
 });
 
 test("life tab: only today's routine todo, no work-time part", async () => {
   await ui.tab("life");
   assert.deepEqual(await ui.ids(), ["b", "r1_2026-10-08"]);
-  assert.equal(await ui.text("#hours"), "Tổng 2h · Còn 2h · Xong 0h");
+  assert.equal(await ui.text("#hours-total"), "2h");
+  assert.equal(await ui.text("#hours-cap"), "tổng");
+  assert.equal(await ui.text("#hours-detail"), "Xong 0h · Còn 2h việc");
+  assert.equal(await page.$("#work-left"), null);
 });
 
-test("all tab: every todo with a category dot", async () => {
-  await ui.tab("all");
-  assert.equal((await ui.ids()).length, 5);
-  assert.deepEqual(await page.$$eval("#todo-list .dot", (els) => els.map((e) => e.className)), [
-    "dot work",
-    "dot life",
-    "dot work",
-    "dot life",
-    "dot work",
-  ]);
+test("toggle has only the two categories and marks the active one", async () => {
+  assert.deepEqual(await page.$$eval("#tabs button", (els) => els.map((e) => e.dataset.tab)), ["work", "life"]);
+  assert.equal(await page.$eval('#tabs button[data-tab="life"]', (el) => el.getAttribute("aria-pressed")), "true");
+  assert.equal(await page.$eval('#tabs button[data-tab="work"]', (el) => el.getAttribute("aria-pressed")), "false");
 });
 
-test("new todo takes the tab's category; the all tab follows the clock", async () => {
+test("new todo takes the category being shown", async () => {
+  await ui.tab("work");
   await page.type("#new-todo", "Mua sữa\n");
   await wait(50);
-  assert.equal((await added("Mua sữa")).category, "work"); // Thursday 10:00
+  assert.equal((await added("Mua sữa")).category, "work");
   await ui.tab("life");
   await page.type("#new-todo", "Gọi mẹ\n");
   await wait(50);
@@ -116,8 +117,10 @@ test("warning when remaining work is more than work hours left", async () => {
   await ui.selectAll("#detail-estimate");
   await page.keyboard.type("10");
   await page.keyboard.press("Tab");
-  await page.waitForSelector("#hours .warn", { timeout: 2000 });
-  assert.match(await ui.text("#hours .warn"), /⚠ Giờ làm còn 7h/);
+  await page.waitForSelector("#work-left.warn", { timeout: 2000 });
+  assert.equal(await ui.text("#work-left"), "Còn 7h giờ làm · không kịp");
+  assert.equal(await ui.text("#hours-cap"), "/ 8h · vượt 7.5h");
+  assert.ok(await page.$("#hours-total.over"));
 });
 
 test("category change in the panel moves the todo to the other tab", async () => {
@@ -155,7 +158,7 @@ test("repeat: start daily, pick days, weekdays, stop", async () => {
   assert.equal(routine.lastCreated, "2026-10-08");
   assert.equal(routine.category, "life");
   assert.equal(await ui.val("#detail-repeat"), "daily");
-  assert.match((await ui.texts())[0], /^🔁 Đi chợ/);
+  assert.match((await ui.texts())[0], /^Đi chợ\s*Hằng ngày$/);
 
   await page.select("#detail-repeat", "custom");
   await wait(30);
@@ -198,31 +201,35 @@ test("a deleted routine todo is not recreated the same day", async () => {
 });
 
 test("history: read-only view of yesterday with the unfinished routine", async () => {
-  await ui.tab("all");
   await ui.click("#prev-day");
   await wait(50);
-  assert.equal(await ui.text("#day-label"), "07/10");
+  assert.equal(await ui.text("#day-label"), "Thứ 4, 07/10");
   assert.equal(await ui.hidden("#add-form"), true);
-  const texts = await ui.texts();
-  assert.equal(texts.length, 2);
-  assert.ok(texts.some((t) => t.includes("Họp team v2")));
-  assert.ok(texts.some((t) => t.includes("Tập thể dục") && t.includes("chưa xong")));
-  assert.equal(await ui.text("#hours"), "Xong 1h · Chưa xong 1h");
-  assert.equal(await ui.text("#count"), "Xong 1 / 2 việc");
+  assert.deepEqual(await ui.texts(), ["Họp team v2"]);
+  assert.equal(await ui.text("#hours-total"), "1h");
+  assert.equal(await ui.text("#hours-cap"), "đã xong");
+  assert.equal(await ui.text("#hours-detail"), "Chưa xong 0h");
+  assert.equal(await ui.text("#count"), "Xong 1 / 1 việc");
   assert.equal(await page.$$eval("#todo-list .handle, #todo-list .delete", (els) => els.length), 0);
   assert.ok(await page.$$eval("#todo-list input", (els) => els.every((e) => e.disabled)));
   await ui.click("#todo-list li .text");
   assert.equal(await ui.panelOpen(), false);
 
+  await ui.tab("life");
+  assert.deepEqual(await ui.texts(), ["Tập thể dụcHằng ngàyChưa xong"]);
+  assert.equal(await ui.text("#hours-detail"), "Chưa xong 1h");
+  assert.equal(await ui.text("#count"), "Xong 0 / 1 việc");
+
   await ui.click("#next-day");
-  assert.equal(await ui.text("#day-label"), "Hôm nay · 08/10");
+  assert.equal(await ui.text("#day-label"), "Hôm nay · Thứ 5, 08/10");
   assert.equal(await ui.hidden("#add-form"), false);
   assert.equal(await page.$eval("#next-day", (el) => el.disabled), true);
 });
 
 test("next day: routines recreated, yesterday's done and routine todos gone", async () => {
   await ui.refreshClock(at(9, 9, 30)); // Friday
-  assert.equal(await ui.text("#day-label"), "Hôm nay · 09/10");
+  await ui.tab("work");
+  assert.equal(await ui.text("#day-label"), "Hôm nay · Thứ 6, 09/10");
   assert.ok(await ui.get("todos/r1_2026-10-09"));
   assert.ok(await ui.get("todos/r2_2026-10-09"));
   assert.equal((await ui.get("todos/r1_2026-10-09")).text, "Tập thể dục 30p");
@@ -238,12 +245,11 @@ test("weekend: no work routine, Saturday routine created, 0h work left", async (
   assert.equal(await ui.get("todos/r2_2026-10-10"), undefined);
   assert.ok(await ui.get("todos/r3_2026-10-10"));
   await ui.tab("work");
-  assert.match(await ui.text("#hours"), /Giờ làm còn 0h$/);
+  assert.match(await ui.text("#work-left"), /^Còn 0h giờ làm/);
 });
 
 test("mobile: no horizontal scroll", async () => {
   await page.setViewport({ width: 390, height: 800 });
-  await ui.tab("all");
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
 });
 

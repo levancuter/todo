@@ -18,8 +18,6 @@ before(async () => {
   app = await startApp();
   ui = await openPage(app, { now: at(8, 10), seed });
   page = ui.page;
-  // "all" tab: hours bar without the work-time part
-  await ui.tab("all");
 });
 
 after(async () => {
@@ -27,7 +25,8 @@ after(async () => {
 });
 
 test("hour badges and total bar; old todo counts as 3h", async () => {
-  assert.equal(await ui.text("#hours"), "Tổng 6h · Còn 5h · Xong 1h");
+  assert.equal(await ui.text("#hours-total"), "6h");
+  assert.equal(await ui.text("#hours-detail"), "Xong 1h · Còn 5h việc");
   assert.deepEqual(await page.$$eval(".estimate", (els) => els.map((e) => e.textContent)), ["3h", "2h", "1h"]);
 });
 
@@ -35,8 +34,17 @@ test("list checkbox toggles without opening the panel", async () => {
   await ui.click(`${ui.li("c")} input[type=checkbox]`);
   assert.equal(await ui.panelOpen(), false);
   assert.equal((await ui.get("todos/c")).done, false);
-  assert.equal(await ui.text("#hours"), "Tổng 6h · Còn 6h · Xong 0h");
+  assert.equal(await ui.text("#hours-detail"), "Xong 0h · Còn 6h việc");
   await ui.click(`${ui.li("c")} input[type=checkbox]`);
+});
+
+test("opening the panel does not move the list", async () => {
+  const box = () => page.$eval("#todo-list", (el) => JSON.stringify(el.getBoundingClientRect()));
+  const before = await box();
+  await ui.clickText("b");
+  assert.equal(await ui.panelOpen(), true);
+  assert.equal(await box(), before);
+  await ui.clickText("b");
 });
 
 test("click text opens the panel with data, item highlighted", async () => {
@@ -82,7 +90,8 @@ test("estimate edit saves and updates badge and total", async () => {
   await page.keyboard.type("4");
   await wait(600);
   assert.equal((await ui.get("todos/b")).estimate, 4);
-  assert.equal(await ui.text("#hours"), "Tổng 8h · Còn 7h · Xong 1h");
+  assert.equal(await ui.text("#hours-total"), "8h");
+  assert.equal(await ui.text("#hours-detail"), "Xong 1h · Còn 7h việc");
   assert.equal(await ui.text(`${ui.li("b")} .estimate`), "4h");
 });
 
@@ -177,7 +186,8 @@ test("new todo defaults to 3h and an empty note", async () => {
   const added = (await ui.writes()).find((w) => w[0] === "set" && w[2].text === "Việc mới")[2];
   assert.equal(added.estimate, 3);
   assert.equal(added.note, "");
-  assert.equal(await ui.text("#hours"), "Tổng 7h · Còn 7h · Xong 0h");
+  assert.equal(await ui.text("#hours-total"), "7h");
+  assert.equal(await ui.text("#hours-detail"), "Xong 0h · Còn 7h việc");
 });
 
 test("mobile: panel covers the full width, no horizontal scroll", async () => {
