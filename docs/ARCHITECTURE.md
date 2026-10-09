@@ -38,7 +38,7 @@ users/{uid}/todos/{todoId}
   deadline: string | null   // hạn chót "YYYY-MM-DD", chỉ việc không lặp lại
   skipped: boolean          // bỏ qua: luôn đi kèm done = true
   actualSeconds: number     // giờ thực tế đã cộng dồn, tính bằng giây
-  timerStartedAt: timestamp | null  // đang bấm giờ từ lúc này, null nếu không chạy
+  timerStartedAt: number | null     // đang bấm giờ từ lúc này (ms, giờ máy), null nếu không chạy
   subtasks: { id, text, done }[]    // task con dạng checklist
 
 users/{uid}/routines/{routineId}    // mẫu việc lặp lại
@@ -141,13 +141,15 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 
 ## Bấm giờ
 
-- Đồng hồ lưu trên todo: `timerStartedAt` là lúc bắt đầu. Thời gian đang chạy = bây giờ − `timerStartedAt`, tính trên máy và cập nhật mỗi giây, không ghi Firestore mỗi giây.
+- Đồng hồ lưu trên todo: `timerStartedAt` là lúc bắt đầu, dạng `Date.now()`. Không dùng `serverTimestamp` vì nó rỗng cho tới khi server xác nhận, đồng hồ sẽ không chạy ngay. Thời gian đang chạy = bây giờ − `timerStartedAt`, tính trên máy và cập nhật mỗi giây, không ghi Firestore mỗi giây.
 - Dừng: `actualSeconds += bây giờ − timerStartedAt`, `timerStartedAt = null`. Mỗi lần bắt đầu hoặc dừng chỉ 1 lượt ghi.
 - Chỉ một việc chạy: bắt đầu việc mới thì dừng việc cũ và chạy việc mới trong cùng một batch.
 - Tự chuyển việc: tick xong hoặc bỏ qua việc đang chạy thì trong cùng một batch: dừng và đóng việc đó, đặt `timerStartedAt` cho việc chưa xong đầu tiên (theo `order`) cùng loại.
 - Tự dừng khi quên tắt: khi mở app và mỗi phút, nếu việc đang chạy đã qua mốc dừng (việc Công việc: 12h, 18h; mọi việc: 0h) thì dừng tại đúng mốc đó. Máy nào mở app trước thì ghi; hai máy cùng ghi ra cùng kết quả.
 - Việc đang chạy luôn là việc chưa xong, nằm trong listener `done == false`, nên mọi thiết bị đều thấy đồng hồ mà không cần query thêm.
-- Sửa tay giờ thực tế trong panel: ghi `actualSeconds` = số giờ nhập × 3600.
+- Sửa tay giờ thực tế trong panel: ghi `actualSeconds` = số giờ nhập × 3600. Ô này khóa khi đồng hồ đang chạy.
+- Giờ thực tế hiển thị (badge, thẻ giờ, panel) luôn cộng cả thời gian đang chạy. Chỉ `TimerClock` cập nhật mỗi giây, phần còn lại cập nhật khi dữ liệu đổi hoặc mỗi phút.
+- Logic thuần ở `timer.js`: `elapsedSeconds`, `nextTodo`, `autoStopAt`, `formatClock`.
 
 ## Task con
 
