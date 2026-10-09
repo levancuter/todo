@@ -54,15 +54,24 @@ function Check({ todo, onToggle }) {
   );
 }
 
-function Body({ todo, tags, onClick }) {
+// The running clock sits in the label line, so it never squeezes the title
+function Body({ todo, tags, clock, onClick }) {
   const Tag = onClick ? "button" : "span";
   return (
     <Tag type={onClick ? "button" : undefined} className="text" onClick={onClick}>
       <span className="title">{todo.text}</span>
-      {tags.length > 0 && <span className="meta">{tags}</span>}
+      {(clock || tags.length > 0) && (
+        <span className="meta">
+          {clock}
+          {tags}
+        </span>
+      )}
     </Tag>
   );
 }
+
+// Keeps a button's column when the row has no such button, so columns line up
+const Slot = ({ name }) => <span className={`slot slot-${name}`} aria-hidden="true" />;
 
 // "1.5/2h" once time was spent (running timer included), red when over the estimate
 function Estimate({ todo }) {
@@ -93,23 +102,27 @@ export function TodoItem({ todo, today, routine, selected, pauseLocked, onToggle
         <Icon name="grip" />
       </span>
       <Check todo={todo} onToggle={onToggle} />
-      <Body todo={todo} tags={tagsOf(todo, { today, routine })} onClick={() => onSelect(todo.id)} />
-      {running && <TimerClock todo={todo} />}
+      <Body
+        todo={todo}
+        tags={tagsOf(todo, { today, routine })}
+        clock={running && <TimerClock todo={todo} />}
+        onClick={() => onSelect(todo.id)}
+      />
       <Estimate todo={todo} />
-      {running ? (
-        !pauseLocked && (
-          <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
-            <Icon name="pause" size={12} />
-          </button>
-        )
+      {running && !pauseLocked ? (
+        <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
+          <Icon name="pause" size={12} />
+        </button>
+      ) : !running && !todo.done ? (
+        <button type="button" className="timer-button" title="Bắt đầu bấm giờ" aria-label="Bắt đầu bấm giờ" onClick={() => onStart(todo.id)}>
+          <Icon name="play" size={12} />
+        </button>
       ) : (
-        !todo.done && (
-          <button type="button" className="timer-button" title="Bắt đầu bấm giờ" aria-label="Bắt đầu bấm giờ" onClick={() => onStart(todo.id)}>
-            <Icon name="play" size={12} />
-          </button>
-        )
+        <Slot name="timer" />
       )}
-      {!todo.done && (
+      {todo.done ? (
+        <Slot name="skip" />
+      ) : (
         <button type="button" className="row-action skip" title="Bỏ qua" aria-label="Bỏ qua" onClick={() => onSkip(todo.id)}>
           <Icon name="skip" size={14} />
         </button>
