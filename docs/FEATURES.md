@@ -176,6 +176,8 @@ Mục tiêu (tháng 10)    Hoàn thành hệ thống báo cáo quý       40h
 | 6c | Gemini chia việc, bật App Check | Có |
 
 ## Dự kiến
+
+- Đa ngôn ngữ: thêm tiếng Nhật (日本語). Đổi ngôn ngữ trong menu tài khoản, nhớ cho mọi máy. Chỉ dịch giao diện, nội dung việc giữ nguyên như đã nhập. Nên làm trước Phiên bản 6.
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
 - Ghi chú dạng nhật ký (nhiều ghi chú có thời gian)
 - Lọc: tất cả / đang làm / đã xong

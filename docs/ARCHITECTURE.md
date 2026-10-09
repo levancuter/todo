@@ -222,6 +222,16 @@ users/{uid}/todos/{todoId}
 - Chưa dùng Next.js: app chạy hoàn toàn trên trình duyệt (realtime, offline), không cần SSR hay SEO. Next.js đầy đủ cần server, phải lên gói trả phí. Xem lại khi có trang công khai hoặc cần logic phía server.
 - Gọi AI không cần server: Gemini qua Firebase AI Logic chạy từ trình duyệt, khóa được Firebase giữ và bảo vệ bằng App Check (xem mục Kế hoạch tháng / tuần).
 
+Đa ngôn ngữ (tiếng Việt, tiếng Nhật):
+
+- Chuỗi giao diện tách ra `src/i18n/vi.js`, `src/i18n/ja.js`, gọi qua hàm `t(key)`. Khoảng 150 chuỗi nên tự viết, không cần thư viện lớn.
+- Ngày giờ dùng `Intl.DateTimeFormat` theo ngôn ngữ: "Thứ 6, 09/10" ↔ "10月9日(金)". Logic thuần (`dates.js`, `routines.js`...) chỉ trả dữ liệu, phần chữ để giao diện dịch.
+- Font: Be Vietnam Pro không có chữ Nhật, thêm Noto Sans JP làm font dự phòng, chỉ tải khi chọn tiếng Nhật.
+- Ngôn ngữ lưu ở `users/{uid}/meta/settings` để mọi máy dùng chung. Lần đầu lấy theo ngôn ngữ trình duyệt.
+- Không dịch dữ liệu người dùng nhập (tên việc, ghi chú). Gemini (v6c) trả lời theo ngôn ngữ đang dùng.
+- Test giao diện chạy các màn hình chính ở cả hai ngôn ngữ; kiểm tra không còn chuỗi chưa dịch.
+- Làm trước Phiên bản 6 để chuỗi mới của v6 vào bộ dịch ngay từ đầu.
+
 ## Ghi chú
 
 - Mất mạng vẫn dùng được, có mạng lại tự đồng bộ.
