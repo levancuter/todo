@@ -19,6 +19,7 @@ import {
   removeTodo,
   setDone,
   setOrder,
+  setSkipped,
   startRoutine,
   stopRoutine,
   updateRoutine,
@@ -26,6 +27,13 @@ import {
 } from "./todos.js";
 
 const ROUTINE_FIELDS = ["text", "estimate", "category"];
+
+// Skipped todos are not counted as planned work
+const planned = (todos) => todos.filter((t) => !t.skipped).length;
+function skippedNote(todos) {
+  const n = todos.length - planned(todos);
+  return n ? ` · ${n} bỏ qua` : "";
+}
 
 // tab: "work" | "life", the category being shown
 export default function TodoView({ uid, tab, onError }) {
@@ -172,18 +180,19 @@ export default function TodoView({ uid, tab, onError }) {
         routine={routineOf(todo)}
         selected={todo.id === selectedId}
         onToggle={(id, done) => setDone(uid, id, done, today).catch(onError)}
+        onSkip={(id) => setSkipped(uid, id, true, today).catch(onError)}
         onSelect={select}
         onDelete={(id) => removeTodo(uid, id).catch(onError)}
       />
     ));
     const left = shown.filter((t) => !t.done).length;
-    if (shown.length) count = `Còn ${left} / ${shown.length} việc`;
+    if (shown.length) count = `Còn ${left} / ${planned(shown)} việc${skippedNote(shown)}`;
   } else if (historyLoaded) {
     shown = byTab(historyTodos(historyLoaded, viewDay));
     content = shown.map((todo) => <HistoryItem key={todo.id} todo={todo} routine={routineOf(todo)} />);
     emptyText = "Không có việc nào.";
-    const done = shown.filter((t) => t.done).length;
-    if (shown.length) count = `Xong ${done} / ${shown.length} việc`;
+    const done = shown.filter((t) => t.done && !t.skipped).length;
+    if (shown.length) count = `Xong ${done} / ${planned(shown)} việc${skippedNote(shown)}`;
   } else {
     emptyText = "Đang tải...";
   }
@@ -251,6 +260,7 @@ export default function TodoView({ uid, tab, onError }) {
         routine={selected ? routineOf(selected) : undefined}
         onSave={saveTodo}
         onDone={(id, done) => setDone(uid, id, done, today).catch(onError)}
+        onSkip={(id, skipped) => setSkipped(uid, id, skipped, today).catch(onError)}
         onRepeat={setRepeat}
         onDelete={(id) => removeTodo(uid, id).catch(onError)}
         onClose={close}

@@ -16,6 +16,7 @@ export default function HoursCard({ todos, tab, workLeft, history }) {
   let total = formatHours(h.total);
   let cap = "tổng";
   let detail = `Xong ${formatHours(h.done)} · Còn ${formatHours(h.left)} việc`;
+  if (h.actual > 0) detail += ` · Thực tế ${formatHours(h.actual)}`;
   if (isWork) cap = over ? `/ 8h · vượt ${formatHours(h.total - WORK_HOURS_PER_DAY)}` : "/ 8h kế hoạch";
   if (history) {
     total = formatHours(h.done);
@@ -35,7 +36,7 @@ export default function HoursCard({ todos, tab, workLeft, history }) {
         {isWork && (
           <span id="work-left" className={late ? "warn" : ""}>
             <Icon name="clock" size={14} />
-            {`Còn ${formatHours(Math.floor(workLeft * 2) / 2)} giờ làm${late ? " · không kịp" : ""}`}
+            {`Còn ${formatHours(Math.floor(workLeft * 10) / 10)} giờ làm${late ? " · không kịp" : ""}`}
           </span>
         )}
       </div>

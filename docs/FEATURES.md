@@ -60,7 +60,7 @@
 
 ## Phiên bản 5 (đang thiết kế)
 
-### Bỏ qua
+### Bỏ qua (đã làm)
 
 Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 
@@ -72,11 +72,12 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Việc lặp lại: chỉ bỏ qua ngày hôm đó, hôm sau vẫn tạo bình thường.
 - Việc chưa xong giữ nguyên như Phiên bản 3: tự chuyển sang ngày tiếp theo, việc lặp lại chưa xong ghi "chưa xong" trong lịch sử.
 
-### Giờ công
+### Giờ công (đã làm)
 
 - Nhập giờ với bước 0.1h (ví dụ 0.1, 0.3, 1.2).
 - Tab Công việc: tổng giờ so với 8 tiếng/ngày, ví dụ `6.5h / 8h`, có thanh tiến độ. Cảnh báo khi vượt 8h.
 - Badge giờ hiện `thực tế/dự kiến`, ví dụ `1.5/2h`, màu đỏ nếu vượt dự kiến.
+- Giờ thực tế sửa tay trong panel (bước 0.1h). Thẻ giờ hiện thêm tổng thực tế.
 
 ### Bấm giờ (giờ thực tế)
 
@@ -97,7 +98,7 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Việc chưa xong chuyển sang ngày sau thì giữ nguyên trạng thái task con.
 - Việc lặp lại: task con thuộc mẫu, mỗi ngày tạo lại với tất cả bước chưa tick. Thêm, xóa, đổi tên task con của việc hôm nay thì cập nhật luôn mẫu; tick chỉ áp dụng cho ngày đó.
 
-### Giao diện
+### Giao diện (đã làm)
 
 - Chuyển giao diện sang React (xem ARCHITECTURE mục Định hướng). Chức năng giữ nguyên.
 - Mở panel chi tiết không làm lệch danh sách: panel trượt vào từ bên phải, đè lên phần trống.
