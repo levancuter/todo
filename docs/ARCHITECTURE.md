@@ -36,12 +36,17 @@ users/{uid}/todos/{todoId}
   routineId: string | null  // mẫu lặp lại tạo ra việc này
   date: string | null       // ngày của việc lặp lại "YYYY-MM-DD"
   deadline: string | null   // hạn chót "YYYY-MM-DD", chỉ việc không lặp lại
+  skipped: boolean          // bỏ qua: luôn đi kèm done = true
+  actualSeconds: number     // giờ thực tế đã cộng dồn, tính bằng giây
+  timerStartedAt: timestamp | null  // đang bấm giờ từ lúc này, null nếu không chạy
+  subtasks: { id, text, done }[]    // task con dạng checklist
 
 users/{uid}/routines/{routineId}    // mẫu việc lặp lại
   text: string
   estimate: number
   category: string
   days: number[]     // thứ trong tuần, 0 = CN ... 6 = T7
+  subtasks: { id, text }[]  // các bước, mỗi ngày tạo lại chưa tick
   lastCreated: string       // ngày gần nhất đã tạo việc "YYYY-MM-DD"
   createdAt: timestamp
 
@@ -51,7 +56,8 @@ users/{uid}/meta/app                // cờ nâng cấp dữ liệu
 
 - Kéo thả: `order` mới = trung bình `order` của 2 việc liền kề, chỉ ghi 1 document.
 - Việc cũ chưa có `order` dùng `createdAt` thay thế.
-- Field mới thiếu ở việc cũ thì dùng mặc định: `estimate` 3, `note` `""`, `category` `"work"`. Không cần migrate.
+- Field mới thiếu ở việc cũ thì dùng mặc định: `estimate` 3, `note` `""`, `category` `"work"`, `skipped` false, `actualSeconds` 0, `subtasks` `[]`. Không cần migrate.
+- Giờ dự kiến làm tròn bước 0.1h. Cộng số thập phân có sai số (0.1 + 0.2), nên tổng giờ làm tròn 1 chữ số khi hiển thị.
 - Ngày luôn tính theo giờ máy người dùng, dạng chuỗi `YYYY-MM-DD`.
 
 ## Chi tiết việc
@@ -126,6 +132,29 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 - `workHoursLeft(now)`: số giờ làm còn lại hôm nay, không tính nghỉ trưa. Ví dụ 11h còn 6h, 12h30 còn 5h, sau 18h hoặc cuối tuần còn 0h.
 - Cảnh báo khi giờ việc Công việc còn lại > `workHoursLeft`.
 - Loại đang xem chỉ lưu trên máy (state trong `App.jsx`), không lưu Firestore. Việc mới thuộc loại đang xem.
+
+## Bỏ qua
+
+- Bỏ qua ghi `done: true, skipped: true, doneDate: hôm nay`. Nhờ vậy dùng lại 2 query hiện có: hôm nay vẫn thấy (`doneDate` = hôm nay), không chuyển sang ngày sau (`done` = true), lịch sử tìm được.
+- Hủy bỏ qua ghi `done: false, skipped: false, doneDate: null`, giống bỏ tick.
+- Tổng giờ và giờ còn lại không tính việc `skipped`.
+
+## Bấm giờ
+
+- Đồng hồ lưu trên todo: `timerStartedAt` là lúc bắt đầu. Thời gian đang chạy = bây giờ − `timerStartedAt`, tính trên máy và cập nhật mỗi giây, không ghi Firestore mỗi giây.
+- Dừng: `actualSeconds += bây giờ − timerStartedAt`, `timerStartedAt = null`. Mỗi lần bắt đầu hoặc dừng chỉ 1 lượt ghi.
+- Chỉ một việc chạy: bắt đầu việc mới thì dừng việc cũ và chạy việc mới trong cùng một batch.
+- Tự chuyển việc: tick xong hoặc bỏ qua việc đang chạy thì trong cùng một batch: dừng và đóng việc đó, đặt `timerStartedAt` cho việc chưa xong đầu tiên (theo `order`) cùng loại.
+- Tự dừng khi quên tắt: khi mở app và mỗi phút, nếu việc đang chạy đã qua mốc dừng (việc Công việc: 12h, 18h; mọi việc: 0h) thì dừng tại đúng mốc đó. Máy nào mở app trước thì ghi; hai máy cùng ghi ra cùng kết quả.
+- Việc đang chạy luôn là việc chưa xong, nằm trong listener `done == false`, nên mọi thiết bị đều thấy đồng hồ mà không cần query thêm.
+- Sửa tay giờ thực tế trong panel: ghi `actualSeconds` = số giờ nhập × 3600.
+
+## Task con
+
+- Lưu thành mảng `subtasks` trong document của việc, không tạo document riêng, nên không tốn thêm lượt đọc.
+- Mỗi task con có `id` riêng (tạo trên máy) để sửa và kéo thả không nhầm phần tử.
+- Mỗi lần sửa ghi lại cả mảng. Sửa cùng một việc trên 2 máy cùng lúc thì lần ghi sau thắng; chấp nhận được vì dùng một mình.
+- Việc lặp lại: mẫu giữ danh sách bước (`id`, `text`). Việc mỗi ngày copy từ mẫu với `done: false`. Thêm, xóa, đổi tên bước của việc hôm nay thì cập nhật mẫu; tick thì không.
 
 ## Bảo mật
 
