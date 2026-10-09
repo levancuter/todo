@@ -80,8 +80,8 @@ function Body({ todo, tags, clock, onClick }) {
   );
 }
 
-// Keeps a button's column when the row has no such button, so columns line up
-const Slot = ({ name }) => <span className={`slot slot-${name}`} aria-hidden="true" />;
+// Keeps the timer button's column when the row has none, so columns line up
+const Slot = () => <span className="slot" aria-hidden="true" />;
 
 // "1.5/2h" once time was spent (running timer included), red when over the estimate
 function Estimate({ todo }) {
@@ -118,8 +118,20 @@ export function TodoItem({ todo, today, routine, selected, pauseLocked, onToggle
         clock={running && <TimerClock todo={todo} />}
         onClick={() => onSelect(todo.id)}
       />
-      <Estimate todo={todo} />
-      {running && !pauseLocked ? (
+      {/* Hours and timer: fixed columns. Skip and delete float over the row on hover. */}
+      <span className="trail">
+        <span className="row-actions">
+          {!todo.done && (
+            <button type="button" className="row-action skip" title="Bỏ qua" aria-label="Bỏ qua" onClick={() => onSkip(todo.id)}>
+              <Icon name="skip" size={14} />
+            </button>
+          )}
+          <button type="button" className="row-action delete" title="Xóa" aria-label="Xóa việc" onClick={() => onDelete(todo.id)}>
+            <Icon name="x" />
+          </button>
+        </span>
+        <Estimate todo={todo} />
+        {running && !pauseLocked ? (
         <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
           <Icon name="pause" size={12} />
         </button>
@@ -128,18 +140,9 @@ export function TodoItem({ todo, today, routine, selected, pauseLocked, onToggle
           <Icon name="play" size={12} />
         </button>
       ) : (
-        <Slot name="timer" />
-      )}
-      {todo.done ? (
-        <Slot name="skip" />
-      ) : (
-        <button type="button" className="row-action skip" title="Bỏ qua" aria-label="Bỏ qua" onClick={() => onSkip(todo.id)}>
-          <Icon name="skip" size={14} />
-        </button>
-      )}
-      <button type="button" className="row-action delete" title="Xóa" aria-label="Xóa việc" onClick={() => onDelete(todo.id)}>
-        <Icon name="x" />
-      </button>
+          <Slot />
+        )}
+      </span>
     </li>
   );
 }

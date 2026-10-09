@@ -372,7 +372,8 @@ button.link {
   gap: 8px;
   padding: 12px 12px 12px 6px;
   border-top: 1px solid var(--line);
-  background: var(--card);
+  --row-bg: var(--card);
+  background: var(--row-bg);
   transition: transform 150ms ease;
 }
 
@@ -387,10 +388,6 @@ button.link {
 
 .todo:only-child {
   border-radius: var(--radius);
-}
-
-.todo.selected {
-  background: var(--cat-soft);
 }
 
 .todo.readonly {
@@ -572,8 +569,37 @@ button.text {
   opacity: 0;
 }
 
-.todo:hover .row-action,
-.row-action:focus-visible {
+/* Hours and timer button of a row; skip and delete float to their left */
+.trail {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Hidden (and not clickable) until the row is hovered or focused */
+.row-actions {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  display: flex;
+  gap: 2px;
+  padding: 0 4px 0 12px;
+  background: linear-gradient(to right, transparent, var(--row-bg) 12px);
+  visibility: hidden;
+}
+
+.todo.selected {
+  --row-bg: var(--cat-soft);
+}
+
+.todo:hover .row-actions,
+.row-actions:focus-within {
+  visibility: visible;
+}
+
+.row-actions .row-action {
   opacity: 1;
 }
 
@@ -1019,13 +1045,8 @@ button.danger:hover {
     justify-content: center;
   }
 
-  /* No hover on touch screens: keep delete visible, skip is in the panel */
-  .delete {
-    opacity: 1;
-  }
-
-  .row-action.skip,
-  .slot-skip {
+  /* No hover on touch screens: skip and delete are in the panel */
+  .row-actions {
     display: none;
   }
 
