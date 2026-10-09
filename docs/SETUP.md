@@ -67,6 +67,7 @@ File `.github/workflows/ci.yml`:
 - Pull request: test → build → deploy lên kênh `preview`, link được comment vào PR.
 - Merge vào `main`: test → build → deploy bản thật.
 - Test fail thì không deploy.
+- Chỉ sửa tài liệu (`docs/`, file `.md`) thì bỏ qua test, preview và deploy. Job bị bỏ qua vẫn tính là đạt, nên ruleset bắt buộc `test` vẫn cho merge.
 
 ### 7.1. Secret deploy Firebase
 
