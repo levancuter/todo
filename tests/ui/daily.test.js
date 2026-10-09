@@ -116,7 +116,7 @@ test("warning when remaining work is more than work hours left", async () => {
   await ui.selectAll("#detail-estimate");
   await page.keyboard.type("10");
   await page.keyboard.press("Tab");
-  await wait(100);
+  await page.waitForSelector("#hours .warn", { timeout: 2000 });
   assert.match(await ui.text("#hours .warn"), /⚠ Giờ làm còn 7h/);
 });
 

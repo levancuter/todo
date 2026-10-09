@@ -62,6 +62,10 @@ export async function startApp() {
 export async function openPage(app, { now, seed }) {
   const page = await app.browser.newPage();
   await page.setViewport({ width: 1280, height: 800 });
+  // A headless page may not count as focused (e.g. on CI), and then
+  // focus/blur events don't fire. The panel saves on blur.
+  const cdp = await page.createCDPSession();
+  await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
