@@ -28,3 +28,11 @@ Ghi lại lỗi và điểm chưa ổn để sửa sau. Sửa xong thì chuyển
 - Hiện tượng: Bên phải cột giờ luôn có một khoảng trống lớn, nhất là ở việc đã xong. Tên việc dài bị xuống dòng sớm.
 - Nguyên nhân: Bản sửa vấn đề 2 giữ chỗ cố định cho cả 3 nút (▶, Bỏ qua, Xóa). Bỏ qua và Xóa chỉ hiện khi rê chuột, nên 64px đó hầu như luôn trống.
 - Cách sửa: Chỉ nút ▶/⏸ giữ cột cố định. Bỏ qua và Xóa hiện nổi bên trái cột giờ khi rê chuột, không chiếm chỗ, khi ẩn thì không bấm được. Điện thoại: hai nút này chỉ có trong panel. Test: `tests/ui/layout.test.js`.
+
+## 4. Thanh chọn ngày nằm lệch trái
+
+- Ghi nhận: 09/10/2026
+- Trạng thái: Chưa sửa
+- Hiện tượng: Thanh `‹ Hôm nay · Thứ 6, 09/10 ›` dồn về bên trái, trong khi thẻ giờ và danh sách bên dưới rộng hết khung.
+- Mong muốn: Căn giữa thanh chọn ngày.
+- Hướng sửa: `#day-nav` thêm `justify-content: center`. Nhãn ngày đổi độ dài (Hôm nay / Thứ 4, 07/10) thì hai nút mũi tên dịch theo; nên cho nhãn chiều rộng cố định để mũi tên đứng yên.
