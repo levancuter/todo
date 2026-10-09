@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { categoryOf, workHoursLeft } from "./category.js";
+import { categoryOf, isWorkTime, workHoursLeft } from "./category.js";
 import { historyTodos, todayTodos } from "./daily.js";
 import { addDays, dayKey, formatLongDay } from "./dates.js";
 import DetailPanel from "./DetailPanel.jsx";
@@ -10,7 +10,7 @@ import HoursCard from "./HoursCard.jsx";
 import Icon from "./Icon.jsx";
 import { orderBetween, sortTodos } from "./order.js";
 import { dueRoutines } from "./routines.js";
-import { autoStopAt, nextTodo } from "./timer.js";
+import { autoStart, autoStopAt, nextTodo } from "./timer.js";
 import { HistoryItem, TodoItem } from "./TodoItem.jsx";
 import {
   addTodo,
@@ -43,8 +43,8 @@ function skippedNote(todos) {
 export default function TodoView({ uid, tab, onError }) {
   const now = useNow();
   const today = dayKey(now);
-  const [todos, setTodos] = useTodos(uid, today, onError); // open todos + todos done today
-  const { routines, fromServer } = useRoutines(uid, onError);
+  const [todos, setTodos, todosFromServer] = useTodos(uid, today, onError); // open todos + todos done today
+  const { routines, fromServer: routinesFromServer } = useRoutines(uid, onError);
   const [viewDay, setViewDay] = useState(null); // past day shown read-only, null = today
   const [history, setHistory] = useState(null); // { day, todos } loaded for the history view
   const [selectedId, setSelectedId] = useState(null);
@@ -62,27 +62,42 @@ export default function TodoView({ uid, tab, onError }) {
   // Only trust routines read from the server: a stale cache could recreate
   // a todo that another device already created and the user changed
   useEffect(() => {
-    if (!fromServer) return;
+    if (!routinesFromServer) return;
     for (const routine of dueRoutines(routines, today)) {
       const key = `${routine.id}_${today}`;
       if (requested.current.has(key)) continue;
       requested.current.add(key);
       createRoutineTodo(uid, routine, today).catch(onError);
     }
-  }, [uid, routines, fromServer, today]);
+  }, [uid, routines, routinesFromServer, today]);
 
-  // Stop forgotten timers: work todos at 12h and 18h, all todos at midnight
+  // Stop timers at the end of a work period (12h, 18h: resumed after the
+  // break) or at midnight, and any left running on a closed todo
   const autoStopped = useRef(new Set());
   useEffect(() => {
     for (const todo of todos) {
       if (!todo.timerStartedAt) continue;
-      const cutoff = autoStopAt(todo);
+      const cutoff = todo.done ? Date.now() : autoStopAt(todo);
       const key = `${todo.id}_${todo.timerStartedAt}`;
       if (Date.now() < cutoff || autoStopped.current.has(key)) continue;
       autoStopped.current.add(key);
-      stopTimer(uid, todo, cutoff).catch(onError);
+      const resume = !todo.done && categoryOf(todo) === "work" && new Date(cutoff).getHours() !== 0;
+      stopTimer(uid, todo, cutoff, resume).catch(onError);
     }
   }, [uid, todos, now]);
+
+  // During work time a work todo is always timed. Only trust server data:
+  // a stale cache could start a todo that is already done.
+  const autoStarted = useRef(new Set());
+  useEffect(() => {
+    if (!todosFromServer) return;
+    const start = autoStart(todayTodos(todos, today), Date.now());
+    if (!start) return;
+    const key = `${start.todo.id}_${start.at}`;
+    if (autoStarted.current.has(key)) return;
+    autoStarted.current.add(key);
+    startTimer(uid, start.todo.id, [], start.at).catch(onError);
+  }, [uid, todos, todosFromServer, today, now]);
 
   useEffect(() => makeSortable(listRef.current, (id, ids) => onDrop.current(id, ids)), []);
 
@@ -103,7 +118,11 @@ export default function TodoView({ uid, tab, onError }) {
   };
 
   const visible = todayTodos(todos, today);
-  const selected = viewDay ? null : (visible.find((t) => t.id === selectedId) ?? null);
+  const historyLoaded = history && history.day === viewDay ? history.todos : null;
+  const dayTodos = viewDay ? (historyLoaded ?? []) : visible;
+  const selected = dayTodos.find((t) => t.id === selectedId) ?? null;
+  // Work todos can't be paused during work time (see autoStart)
+  const workLocked = isWorkTime(now);
 
   // The open todo was deleted: drop its unsaved edits
   useEffect(() => {
@@ -198,7 +217,6 @@ export default function TodoView({ uid, tab, onError }) {
   }
 
   const byTab = (items) => items.filter((t) => categoryOf(t) === tab);
-  const historyLoaded = history && history.day === viewDay ? history.todos : null;
 
   let shown = [];
   let content = null;
@@ -218,6 +236,7 @@ export default function TodoView({ uid, tab, onError }) {
         onSkip={(id) => toggleSkip(id, true)}
         onStart={startTimerOn}
         onPause={pauseTimer}
+        pauseLocked={workLocked && categoryOf(todo) === "work"}
         onSelect={select}
         onDelete={(id) => removeTodo(uid, id).catch(onError)}
       />
@@ -226,7 +245,15 @@ export default function TodoView({ uid, tab, onError }) {
     if (shown.length) count = `Còn ${left} / ${planned(shown)} việc${skippedNote(shown)}`;
   } else if (historyLoaded) {
     shown = byTab(historyTodos(historyLoaded, viewDay));
-    content = shown.map((todo) => <HistoryItem key={todo.id} todo={todo} routine={routineOf(todo)} />);
+    content = shown.map((todo) => (
+      <HistoryItem
+        key={todo.id}
+        todo={todo}
+        routine={routineOf(todo)}
+        selected={todo.id === selectedId}
+        onSelect={select}
+      />
+    ));
     emptyText = "Không có việc nào.";
     const done = shown.filter((t) => t.done && !t.skipped).length;
     if (shown.length) count = `Xong ${done} / ${planned(shown)} việc${skippedNote(shown)}`;
@@ -295,6 +322,8 @@ export default function TodoView({ uid, tab, onError }) {
         ref={panelRef}
         todo={selected}
         routine={selected ? routineOf(selected) : undefined}
+        readOnly={!!viewDay}
+        pauseLocked={!!selected && workLocked && categoryOf(selected) === "work"}
         onSave={saveTodo}
         onDone={toggleDone}
         onSkip={toggleSkip}

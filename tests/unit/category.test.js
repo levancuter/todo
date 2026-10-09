@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { categoryOf, isWorkTime, WORK_HOURS_PER_DAY, workHoursLeft } from "../../src/category.js";
+import { categoryOf, isWorkTime, WORK_HOURS_PER_DAY, workHoursLeft, workPeriodStart } from "../../src/category.js";
 
 // 2026-10-08 is a Thursday, 2026-10-10 a Saturday
 const at = (day, h, m = 0) => new Date(2026, 9, day, h, m);
@@ -36,4 +36,12 @@ test("workHoursLeft skips lunch break and weekends", () => {
 
 test("a work day has 8 hours", () => {
   assert.equal(WORK_HOURS_PER_DAY, 8);
+});
+
+test("workPeriodStart: start of the current work period", () => {
+  assert.equal(workPeriodStart(at(8, 10, 40)), at(8, 9).getTime());
+  assert.equal(workPeriodStart(at(8, 13, 5)), at(8, 13).getTime());
+  assert.equal(workPeriodStart(at(8, 12, 30)), null);
+  assert.equal(workPeriodStart(at(8, 19)), null);
+  assert.equal(workPeriodStart(at(10, 10)), null); // Saturday
 });

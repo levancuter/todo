@@ -33,7 +33,9 @@ function valuesOf(todo) {
 // Handlers: onSave(id, fields) -> Promise, onDone(id, done), onSkip(id, skipped),
 // onStartTimer(id), onPauseTimer(todo), onRepeat(id, days | null),
 // onDelete(id), onClose(), onError(err)
-export default function DetailPanel({ ref, todo, routine, ...handlers }) {
+// readOnly: a todo from the history, shown but not editable.
+// pauseLocked: a work todo during work time keeps its timer running.
+export default function DetailPanel({ ref, todo, routine, readOnly, pauseLocked, ...handlers }) {
   const latest = useRef(handlers);
   latest.current = handlers;
   const shown = useRef(null); // the open todo with local edits applied
@@ -150,7 +152,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
   return (
     <aside id="detail" aria-label="Chi tiết việc" hidden={!todo}>
       <div className="detail-head">
-        <span className="eyebrow">Chi tiết việc</span>
+        <span className="eyebrow">{readOnly ? "Chi tiết việc · chỉ xem" : "Chi tiết việc"}</span>
         <button id="detail-close" className="icon-button" aria-label="Đóng" onClick={() => latest.current.onClose()}>
           <Icon name="x" size={18} />
         </button>
@@ -162,6 +164,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
             id="detail-done"
             type="checkbox"
             aria-label="Hoàn thành"
+            disabled={readOnly}
             checked={!!todo?.done && !todo.skipped}
             onChange={(e) => latest.current.onDone(id, e.target.checked)}
           />
@@ -171,6 +174,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         </span>
         <input
           id="detail-text"
+            disabled={readOnly}
           type="text"
           aria-label="Tên việc"
           autoComplete="off"
@@ -179,12 +183,14 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         />
       </div>
 
-      <div className="detail-actions">
+      <div className="detail-actions" hidden={readOnly}>
         {todo?.timerStartedAt ? (
-          <button id="detail-timer" type="button" className="chip-button dark" onClick={() => latest.current.onPauseTimer(todo)}>
-            <Icon name="pause" size={14} />
-            Tạm dừng
-          </button>
+          !pauseLocked && (
+            <button id="detail-timer" type="button" className="chip-button dark" onClick={() => latest.current.onPauseTimer(todo)}>
+              <Icon name="pause" size={14} />
+              Tạm dừng
+            </button>
+          )
         ) : (
           <button
             id="detail-timer"
@@ -210,6 +216,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
           <span className="input-unit">
             <input
               id="detail-estimate"
+            disabled={readOnly}
               type="number"
               min="0"
               step="0.1"
@@ -229,7 +236,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
               min="0"
               step="0.1"
               inputMode="decimal"
-              disabled={!!todo?.timerStartedAt}
+              disabled={readOnly || !!todo?.timerStartedAt}
               title={todo?.timerStartedAt ? "Tạm dừng để sửa" : undefined}
               {...typing("actual")}
               onChange={(e) => {
@@ -244,6 +251,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
           Loại
           <select
             id="detail-category"
+            disabled={readOnly}
             value={values?.category ?? "work"}
             onChange={(e) => saveNow("category", e.target.value, e.target.value)}
           >
@@ -253,7 +261,8 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         </label>
         <label className="field">
           Lặp lại
-          <select id="detail-repeat" value={mode} onChange={onRepeatChange}>
+          <select id="detail-repeat"
+            disabled={readOnly} value={mode} onChange={onRepeatChange}>
             <option value="none">Không lặp lại</option>
             <option value="daily">Hằng ngày</option>
             <option value="weekdays">Thứ 2 – Thứ 6</option>
@@ -265,6 +274,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
           Hạn chót
           <input
             id="detail-deadline"
+            disabled={readOnly}
             type="date"
             value={values?.deadline ?? ""}
             onChange={(e) => saveNow("deadline", e.target.value, e.target.value || null)}
@@ -272,7 +282,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         </label>
       </div>
 
-      <div id="detail-days" hidden={mode !== "custom"}>
+      <div id="detail-days" hidden={readOnly || mode !== "custom"}>
         {DAYS.map(([day, label]) => (
           <button key={day} type="button" data-day={day} aria-pressed={days.includes(day)} onClick={() => toggleDay(day)}>
             {label}
@@ -284,6 +294,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         Ghi chú
         <textarea
           id="detail-note"
+            disabled={readOnly}
           rows={6}
           placeholder="Thêm ghi chú…"
           {...typing("note")}
@@ -299,7 +310,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
           </span>
           <span id="detail-status">{status}</span>
         </p>
-        <button id="detail-delete" className="danger" onClick={() => latest.current.onDelete(id)}>
+        <button id="detail-delete" className="danger" hidden={readOnly} onClick={() => latest.current.onDelete(id)}>
           <Icon name="trash" size={14} />
           Xóa việc
         </button>

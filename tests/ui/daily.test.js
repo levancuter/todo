@@ -77,7 +77,8 @@ test("work tab: carried label, repeat label, hours against 8h and work time left
   assert.match(texts[2], /^Daily standup\s*T2–T6$/);
   assert.equal(await ui.text("#hours-total"), "5.5h");
   assert.equal(await ui.text("#hours-cap"), "/ 8h kế hoạch");
-  assert.equal(await ui.text("#hours-detail"), "Xong 2h · Còn 3.5h việc");
+  // The first work todo is timed automatically since 9:00
+  assert.equal(await ui.text("#hours-detail"), "Xong 2h · Còn 3.5h việc · Thực tế 1h");
   assert.equal(await ui.text("#work-left"), "Còn 7h giờ làm");
   assert.equal(await page.$("#work-left.warn"), null);
 });
@@ -212,7 +213,17 @@ test("history: read-only view of yesterday with the unfinished routine", async (
   assert.equal(await ui.text("#count"), "Xong 1 / 1 việc");
   assert.equal(await page.$$eval("#todo-list .handle, #todo-list .delete", (els) => els.length), 0);
   assert.ok(await page.$$eval("#todo-list input", (els) => els.every((e) => e.disabled)));
+  // Details can be read, not changed
   await ui.click("#todo-list li .text");
+  assert.equal(await ui.panelOpen(), true);
+  assert.equal(await ui.text(".eyebrow"), "Chi tiết việc · chỉ xem");
+  assert.equal(await ui.val("#detail-text"), "Họp team v2");
+  assert.equal(await page.$eval("#detail-text", (el) => el.disabled), true);
+  assert.equal(await page.$eval("#detail-note", (el) => el.disabled), true);
+  assert.equal(await page.$eval("#detail-done", (el) => el.disabled), true);
+  assert.equal(await ui.hidden(".detail-actions"), true);
+  assert.equal(await ui.hidden("#detail-delete"), true);
+  await page.keyboard.press("Escape");
   assert.equal(await ui.panelOpen(), false);
 
   await ui.tab("life");

@@ -1,4 +1,5 @@
-// 0.1h steps, actual hours and skipping. Clock starts on Thursday 2026-10-08 10:00.
+// 0.1h steps, actual hours and skipping. Clock starts on Thursday 2026-10-08 20:00,
+// outside work time, so no timer runs by itself.
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { at, openPage, startApp, wait } from "./helpers.js";
@@ -25,10 +26,11 @@ let page;
 
 before(async () => {
   app = await startApp();
-  ui = await openPage(app, { now: at(8, 10), seed });
+  ui = await openPage(app, { now: at(8, 20), seed });
   page = ui.page;
   await page.evaluate(() => window.__goOnline());
   await wait(100);
+  await ui.tab("work");
 });
 
 after(async () => {

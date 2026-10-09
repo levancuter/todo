@@ -39,6 +39,8 @@ users/{uid}/todos/{todoId}
   skipped: boolean          // bỏ qua: luôn đi kèm done = true
   actualSeconds: number     // giờ thực tế đã cộng dồn, tính bằng giây
   timerStartedAt: number | null     // đang bấm giờ từ lúc này (ms, giờ máy), null nếu không chạy
+  timerStoppedAt: number | null     // lần dừng gần nhất (ms)
+  timerResume: boolean              // bị dừng lúc 12h / 18h, chạy lại khi vào ca
   subtasks: { id, text, done }[]    // task con dạng checklist
 
 users/{uid}/routines/{routineId}    // mẫu việc lặp lại
@@ -90,7 +92,7 @@ Gói Spark không có tác vụ hẹn giờ trên server, nên không "dọn" d�
 - Tick xong thì ghi `doneDate` = hôm nay, bỏ tick thì ghi `null`.
 - Nhãn `từ 07/10`: việc chưa xong có `createdAt` trước hôm nay.
 - Mỗi phút và khi quay lại tab (`visibilitychange`), app kiểm tra xem đã sang ngày mới chưa. Sang ngày mới thì đăng ký lại listener `doneDate`.
-- Lịch sử chỉ để xem, không sửa.
+- Lịch sử chỉ để xem, không sửa. Bấm vào việc thì panel mở ở chế độ chỉ xem (`readOnly`).
 - Việc cũ đã xong chưa có `doneDate` thì không query được. Lần đầu chạy v3, app gán `doneDate` theo ngày `createdAt` cho các việc này (vài chục document), rồi lưu cờ vào `users/{uid}/meta/app` để không chạy lại.
 
 ## Tải dữ liệu
@@ -140,6 +142,15 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 - Tổng giờ và giờ còn lại không tính việc `skipped`.
 
 ## Bấm giờ
+
+Tự động trong giờ làm (`autoStart` trong `timer.js`, gọi từ `TodoView` khi dữ liệu đổi và mỗi phút):
+
+- Chỉ chạy khi đang trong giờ làm, không có đồng hồ nào chạy, và dữ liệu đã từ server (`fromServer` của `useTodos`). Dữ liệu cache cũ có thể chọn nhầm việc đã xong.
+- Chọn việc có `timerResume`, nếu không thì việc Công việc chưa xong đầu tiên theo `order`.
+- Thời điểm bắt đầu: đầu ca nếu trong ca chưa có lần dừng nào (`timerStoppedAt` < đầu ca), ngược lại là bây giờ. Tránh cộng khoảng nghỉ giữa hai việc.
+- Dừng lúc 12h / 18h ghi `timerResume: true` để sau giờ nghỉ chạy lại đúng việc đó.
+- Việc Công việc không tạm dừng được trong giờ làm: ẩn nút ⏸ trong danh sách và panel.
+- Đồng hồ còn chạy trên việc đã xong (vd hai máy ghi cùng lúc) thì tự dừng ngay.
 
 - Đồng hồ lưu trên todo: `timerStartedAt` là lúc bắt đầu, dạng `Date.now()`. Không dùng `serverTimestamp` vì nó rỗng cho tới khi server xác nhận, đồng hồ sẽ không chạy ngay. Thời gian đang chạy = bây giờ − `timerStartedAt`, tính trên máy và cập nhật mỗi giây, không ghi Firestore mỗi giây.
 - Dừng: `actualSeconds += bây giờ − timerStartedAt`, `timerStartedAt = null`. Mỗi lần bắt đầu hoặc dừng chỉ 1 lượt ghi.

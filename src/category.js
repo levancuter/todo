@@ -22,6 +22,17 @@ export function isWorkTime(now = new Date()) {
   return WORK_PERIODS.some(([start, end]) => h >= start && h < end);
 }
 
+// Start (ms) of the work period `now` is in, or null outside work time
+export function workPeriodStart(now = new Date()) {
+  if (!WORK_DAYS.includes(now.getDay())) return null;
+  const h = hourOf(now);
+  const period = WORK_PERIODS.find(([start, end]) => h >= start && h < end);
+  if (!period) return null;
+  const start = new Date(now);
+  start.setHours(period[0], 0, 0, 0);
+  return start.getTime();
+}
+
 export function workHoursLeft(now = new Date()) {
   if (!WORK_DAYS.includes(now.getDay())) return 0;
   const h = hourOf(now);
