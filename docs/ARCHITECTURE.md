@@ -7,7 +7,7 @@
 
 ## Công nghệ
 
-- Frontend: HTML/CSS/JS thuần, build bằng Vite.
+- Frontend: HTML/CSS/JS thuần, build bằng Vite. Sẽ chuyển sang React (xem mục Định hướng).
 - Đăng nhập: Firebase Auth (Google).
 - Dữ liệu: Firestore, bật offline persistence.
 - Hosting: Firebase Hosting (gói Spark miễn phí).
@@ -136,6 +136,16 @@ match /users/{uid}/{document=**} {
   allow read, write: if request.auth != null && request.auth.uid == uid;
 }
 ```
+
+## Định hướng
+
+Phần giao diện sẽ chuyển sang **React**, vẫn build bằng Vite.
+
+- Lý do: giao diện hiện thao tác DOM trực tiếp và vẽ lại cả danh sách mỗi lần có dữ liệu mới, dễ gây lỗi (mất cú bấm, ghi đè ô đang gõ). React cập nhật theo `key` nên giữ được phần tử DOM.
+- Giữ nguyên: Firebase Hosting gói Spark, các module logic thuần (`hours`, `dates`, `category`, `daily`, `routines`, `order`), lớp dữ liệu `todos.js`, unit test, CI/CD.
+- Viết lại: `main.js`, `detail.js`, `drag.js`, `index.html`.
+- Giữ các `id` trong HTML để bộ test giao diện chạy được với bản React, dùng nó kiểm tra không mất chức năng.
+- Chưa dùng Next.js: app chạy hoàn toàn trên trình duyệt (realtime, offline), không cần SSR hay SEO. Next.js đầy đủ cần server, phải lên gói trả phí. Xem lại khi có trang công khai hoặc cần logic phía server (vd gọi API có khóa bí mật).
 
 ## Ghi chú
 
