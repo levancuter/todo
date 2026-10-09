@@ -1,6 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { categoryOf } from "./category.js";
 import { estimateOf, parseEstimate } from "./hours.js";
+import Icon from "./Icon.jsx";
 import { REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "./routines.js";
 
 const SAVE_DELAY_MS = 500;
@@ -142,74 +143,85 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
   }
 
   return (
-    <aside id="detail" hidden={!todo}>
+    <aside id="detail" aria-label="Chi tiết việc" hidden={!todo}>
       <div className="detail-head">
-        <span>Chi tiết</span>
-        <button id="detail-close" className="icon" title="Đóng" onClick={() => latest.current.onClose()}>
-          ✕
+        <span className="eyebrow">Chi tiết việc</span>
+        <button id="detail-close" className="icon-button" aria-label="Đóng" onClick={() => latest.current.onClose()}>
+          <Icon name="x" size={18} />
         </button>
       </div>
+
       <div className="detail-title">
-        <input
-          id="detail-done"
-          type="checkbox"
-          title="Hoàn thành"
-          checked={!!todo?.done}
-          onChange={(e) => latest.current.onDone(id, e.target.checked)}
-        />
+        <span className="check">
+          <input
+            id="detail-done"
+            type="checkbox"
+            aria-label="Hoàn thành"
+            checked={!!todo?.done}
+            onChange={(e) => latest.current.onDone(id, e.target.checked)}
+          />
+          <span className="box" aria-hidden="true">
+            <Icon name="check" size={12} strokeWidth={3} />
+          </span>
+        </span>
         <input
           id="detail-text"
           type="text"
+          aria-label="Tên việc"
           autoComplete="off"
           {...typing("text")}
           onChange={(e) => edit("text", e.target.value, e.target.value.trim() || null)}
         />
       </div>
-      <label>
-        Giờ dự kiến
-        <span className="detail-estimate">
+
+      <div className="detail-grid">
+        <label className="field">
+          Giờ dự kiến
+          <span className="input-unit">
+            <input
+              id="detail-estimate"
+              type="number"
+              min="0"
+              step="0.5"
+              inputMode="decimal"
+              {...typing("estimate")}
+              onChange={(e) => edit("estimate", e.target.value, parseEstimate(e.target.value))}
+            />
+            h
+          </span>
+        </label>
+        <label className="field">
+          Loại
+          <select
+            id="detail-category"
+            value={values?.category ?? "work"}
+            onChange={(e) => saveNow("category", e.target.value, e.target.value)}
+          >
+            <option value="work">Công việc</option>
+            <option value="life">Cuộc sống</option>
+          </select>
+        </label>
+        <label className="field">
+          Lặp lại
+          <select id="detail-repeat" value={mode} onChange={onRepeatChange}>
+            <option value="none">Không lặp lại</option>
+            <option value="daily">Hằng ngày</option>
+            <option value="weekdays">Thứ 2 – Thứ 6</option>
+            <option value="custom">Chọn thứ</option>
+          </select>
+        </label>
+        {/* Only one-off todos have a deadline */}
+        <label id="detail-deadline-row" className="field" hidden={mode !== "none"}>
+          Hạn chót
           <input
-            id="detail-estimate"
-            type="number"
-            min="0"
-            step="0.5"
-            inputMode="decimal"
-            {...typing("estimate")}
-            onChange={(e) => edit("estimate", e.target.value, parseEstimate(e.target.value))}
+            id="detail-deadline"
+            type="date"
+            value={values?.deadline ?? ""}
+            onChange={(e) => saveNow("deadline", e.target.value, e.target.value || null)}
           />
-          giờ
-        </span>
-      </label>
-      <label>
-        Loại
-        <select
-          id="detail-category"
-          value={values?.category ?? "work"}
-          onChange={(e) => saveNow("category", e.target.value, e.target.value)}
-        >
-          <option value="work">Công việc</option>
-          <option value="life">Cuộc sống</option>
-        </select>
-      </label>
-      {/* Only one-off todos have a deadline */}
-      <label id="detail-deadline-row" hidden={mode !== "none"}>
-        Hạn chót
-        <input
-          id="detail-deadline"
-          type="date"
-          value={values?.deadline ?? ""}
-          onChange={(e) => saveNow("deadline", e.target.value, e.target.value || null)}
-        />
-      </label>
-      <label>
-        Lặp lại
-        <select id="detail-repeat" value={mode} onChange={onRepeatChange}>
-          <option value="none">Không lặp lại</option>
-          <option value="daily">Hằng ngày</option>
-          <option value="weekdays">Thứ 2 – Thứ 6</option>
-          <option value="custom">Chọn thứ</option>
-        </select>
-      </label>
+        </label>
+      </div>
+
       <div id="detail-days" hidden={mode !== "custom"}>
         {DAYS.map(([day, label]) => (
           <button key={day} type="button" data-day={day} aria-pressed={days.includes(day)} onClick={() => toggleDay(day)}>
@@ -217,26 +229,31 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
           </button>
         ))}
       </div>
-      <label>
+
+      <label className="field">
         Ghi chú
         <textarea
           id="detail-note"
-          rows={10}
-          placeholder="Thêm ghi chú..."
+          rows={6}
+          placeholder="Thêm ghi chú…"
           {...typing("note")}
           onChange={(e) => edit("note", e.target.value, e.target.value)}
         />
       </label>
-      <p className="detail-meta">
-        {/* createdAt is null until the server confirms a new todo */}
-        <span id="detail-created">
-          {todo?.createdAt ? "Tạo ngày " + todo.createdAt.toDate().toLocaleDateString("vi-VN") : ""}
-        </span>
-        <span id="detail-status">{status}</span>
-      </p>
-      <button id="detail-delete" className="danger" onClick={() => latest.current.onDelete(id)}>
-        Xóa việc
-      </button>
+
+      <div className="detail-foot">
+        <p className="detail-meta">
+          {/* createdAt is null until the server confirms a new todo */}
+          <span id="detail-created">
+            {todo?.createdAt ? "Tạo ngày " + todo.createdAt.toDate().toLocaleDateString("vi-VN") : ""}
+          </span>
+          <span id="detail-status">{status}</span>
+        </p>
+        <button id="detail-delete" className="danger" onClick={() => latest.current.onDelete(id)}>
+          <Icon name="trash" size={14} />
+          Xóa việc
+        </button>
+      </div>
     </aside>
   );
 }

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { categoryOf, isWorkTime, workHoursLeft } from "./category.js";
+import { categoryOf, workHoursLeft } from "./category.js";
 import { historyTodos, todayTodos } from "./daily.js";
-import { addDays, dayKey, formatDay } from "./dates.js";
+import { addDays, dayKey, formatLongDay } from "./dates.js";
 import DetailPanel from "./DetailPanel.jsx";
 import { makeSortable } from "./drag.js";
 import { useNow, useRoutines, useTodos } from "./hooks.js";
-import { formatHours, sumHours } from "./hours.js";
+import HoursCard from "./HoursCard.jsx";
+import Icon from "./Icon.jsx";
 import { orderBetween, sortTodos } from "./order.js";
 import { dueRoutines } from "./routines.js";
 import { HistoryItem, TodoItem } from "./TodoItem.jsx";
@@ -25,18 +26,13 @@ import {
 } from "./todos.js";
 
 const ROUTINE_FIELDS = ["text", "estimate", "category"];
-const TABS = [
-  ["work", "Công việc"],
-  ["life", "Cuộc sống"],
-  ["all", "Tất cả"],
-];
 
-export default function TodoView({ uid, onError }) {
+// tab: "work" | "life", the category being shown
+export default function TodoView({ uid, tab, onError }) {
   const now = useNow();
   const today = dayKey(now);
   const [todos, setTodos] = useTodos(uid, today, onError); // open todos + todos done today
   const { routines, fromServer } = useRoutines(uid, onError);
-  const [tab, setTab] = useState(() => (isWorkTime() ? "work" : "life"));
   const [viewDay, setViewDay] = useState(null); // past day shown read-only, null = today
   const [history, setHistory] = useState(null); // { day, todos } loaded for the history view
   const [selectedId, setSelectedId] = useState(null);
@@ -125,8 +121,7 @@ export default function TodoView({ uid, onError }) {
     const text = newText.trim();
     if (!text) return;
     setNewText("");
-    const category = tab === "all" ? (isWorkTime() ? "work" : "life") : tab;
-    addTodo(uid, text, category).catch(onError);
+    addTodo(uid, text, tab).catch(onError);
   }
 
   function routineOf(todo) {
@@ -159,13 +154,11 @@ export default function TodoView({ uid, onError }) {
     if (saving) saving.catch(onError);
   }
 
-  const byTab = (items) => (tab === "all" ? items : items.filter((t) => categoryOf(t) === tab));
-  const showDot = tab === "all";
+  const byTab = (items) => items.filter((t) => categoryOf(t) === tab);
   const historyLoaded = history && history.day === viewDay ? history.todos : null;
 
   let shown = [];
-  let content;
-  let hours;
+  let content = null;
   let count = "";
   let emptyText = "Chưa có việc nào.";
 
@@ -176,7 +169,7 @@ export default function TodoView({ uid, onError }) {
         key={todo.id}
         todo={todo}
         today={today}
-        showDot={showDot}
+        routine={routineOf(todo)}
         selected={todo.id === selectedId}
         onToggle={(id, done) => setDone(uid, id, done, today).catch(onError)}
         onSelect={select}
@@ -185,28 +178,10 @@ export default function TodoView({ uid, onError }) {
     ));
     const left = shown.filter((t) => !t.done).length;
     if (shown.length) count = `Còn ${left} / ${shown.length} việc`;
-    const h = sumHours(shown);
-    const workLeft = workHoursLeft(now);
-    const late = h.left > workLeft;
-    hours = (
-      <>
-        {`Tổng ${formatHours(h.total)} · Còn ${formatHours(h.left)} · Xong ${formatHours(h.done)}`}
-        {tab === "work" && (
-          <>
-            {" · "}
-            <span className={late ? "warn" : ""}>
-              {`${late ? "⚠ " : ""}Giờ làm còn ${formatHours(Math.floor(workLeft * 2) / 2)}`}
-            </span>
-          </>
-        )}
-      </>
-    );
   } else if (historyLoaded) {
     shown = byTab(historyTodos(historyLoaded, viewDay));
-    content = shown.map((todo) => <HistoryItem key={todo.id} todo={todo} showDot={showDot} />);
+    content = shown.map((todo) => <HistoryItem key={todo.id} todo={todo} routine={routineOf(todo)} />);
     emptyText = "Không có việc nào.";
-    const h = sumHours(shown);
-    hours = `Xong ${formatHours(h.done)} · Chưa xong ${formatHours(h.left)}`;
     const done = shown.filter((t) => t.done).length;
     if (shown.length) count = `Xong ${done} / ${shown.length} việc`;
   } else {
@@ -215,35 +190,54 @@ export default function TodoView({ uid, onError }) {
 
   return (
     <section id="todo-view">
-      <nav id="tabs">
-        {TABS.map(([key, label]) => (
-          <button key={key} data-tab={key} className={key === tab ? "active" : ""} onClick={() => setTab(key)}>
-            {label}
-          </button>
-        ))}
-      </nav>
       <div id="day-nav">
-        <button id="prev-day" className="icon" title="Ngày trước" onClick={() => openDay(addDays(viewDay || today, -1))}>
-          ←
+        <button
+          id="prev-day"
+          className="icon-button"
+          aria-label="Ngày trước"
+          onClick={() => openDay(addDays(viewDay || today, -1))}
+        >
+          <Icon name="chevronLeft" size={18} />
         </button>
-        <span id="day-label">{viewDay ? formatDay(viewDay) : `Hôm nay · ${formatDay(today)}`}</span>
-        <button id="next-day" className="icon" title="Ngày sau" disabled={!viewDay} onClick={() => openDay(addDays(viewDay, 1))}>
-          →
+        <span id="day-label">
+          {viewDay ? (
+            formatLongDay(viewDay)
+          ) : (
+            <>
+              Hôm nay <span className="muted">· {formatLongDay(today)}</span>
+            </>
+          )}
+        </span>
+        <button
+          id="next-day"
+          className="icon-button"
+          aria-label="Ngày sau"
+          disabled={!viewDay}
+          onClick={() => openDay(addDays(viewDay, 1))}
+        >
+          <Icon name="chevronRight" size={18} />
         </button>
       </div>
-      <form id="add-form" hidden={!!viewDay} onSubmit={add}>
+
+      {(!viewDay || historyLoaded) && (
+        <HoursCard todos={shown} tab={tab} workLeft={workHoursLeft(now)} history={!!viewDay} />
+      )}
+
+      <form id="add-form" className="card" hidden={!!viewDay} onSubmit={add}>
+        <Icon name="plus" size={18} />
         <input
           id="new-todo"
           type="text"
-          placeholder="Thêm việc mới..."
+          placeholder="Thêm việc mới…"
+          aria-label="Thêm việc mới"
           autoComplete="off"
           autoFocus
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
         />
       </form>
-      <p id="hours">{hours}</p>
-      <ul id="todo-list" ref={listRef}>
+
+      <ul id="todo-list" className="card" ref={listRef}>
         {content}
       </ul>
       <p id="empty" hidden={shown.length > 0}>

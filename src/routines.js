@@ -16,6 +16,18 @@ export function dueRoutines(routines, today) {
   );
 }
 
+const DAY_NAMES = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+// Short label for the list, e.g. "Hằng ngày", "T2–T6", "T2, T4"
+export function repeatLabel(days) {
+  const mode = repeatMode(days);
+  if (mode === "none") return null;
+  if (mode === "daily") return "Hằng ngày";
+  if (mode === "weekdays") return "T2–T6";
+  // Monday first, Sunday last
+  return [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DAY_NAMES[d]).join(", ");
+}
+
 export function repeatMode(days) {
   if (!days || days.length === 0) return "none";
   const key = [...days].sort().join();

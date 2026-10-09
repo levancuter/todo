@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { dueRoutines, REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "../../src/routines.js";
+import { dueRoutines, REPEAT_DAILY, REPEAT_WEEKDAYS, repeatLabel, repeatMode } from "../../src/routines.js";
 
 const THURSDAY = "2026-10-08";
 const SATURDAY = "2026-10-10";
@@ -34,4 +34,11 @@ test("repeatMode", () => {
   assert.equal(repeatMode([6, 5, 4, 3, 2, 1, 0]), "daily");
   assert.equal(repeatMode(REPEAT_WEEKDAYS), "weekdays");
   assert.equal(repeatMode([1, 3]), "custom");
+});
+
+test("repeatLabel", () => {
+  assert.equal(repeatLabel([]), null);
+  assert.equal(repeatLabel(REPEAT_DAILY), "Hằng ngày");
+  assert.equal(repeatLabel(REPEAT_WEEKDAYS), "T2–T6");
+  assert.equal(repeatLabel([0, 3, 1]), "T2, T4, CN");
 });

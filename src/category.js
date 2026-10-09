@@ -5,6 +5,8 @@ const WORK_PERIODS = [
   [13, 18],
 ];
 
+export const WORK_HOURS_PER_DAY = WORK_PERIODS.reduce((sum, [start, end]) => sum + end - start, 0);
+
 // Old todos have no `category`
 export function categoryOf(todo) {
   return todo.category === "life" ? "life" : "work";

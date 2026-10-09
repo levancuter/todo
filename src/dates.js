@@ -22,6 +22,13 @@ export function weekdayOf(day) {
   return parseDay(day).getDay();
 }
 
+const WEEKDAYS = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+
+// "Thứ 6, 09/10"
+export function formatLongDay(day) {
+  return `${WEEKDAYS[weekdayOf(day)]}, ${formatDay(day)}`;
+}
+
 export function formatDay(day) {
   const [, m, d] = day.split("-");
   return `${d}/${m}`;
