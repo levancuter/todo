@@ -58,9 +58,57 @@
 - Chỉ cho việc không lặp lại. Bật lặp lại thì hạn chót bị xóa.
 - Nhãn trong danh sách: `hạn 12/10` (xám), `hạn hôm nay` (cam), `quá hạn 07/10` (đỏ). Việc đã xong không hiện nhãn.
 
+## Phiên bản 5 (đang thiết kế)
+
+### Bỏ qua
+
+Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
+
+- Nút "Bỏ qua" trong panel chi tiết và trên mỗi việc (hiện khi rê chuột).
+- Việc bị bỏ qua được đóng lại: không chuyển sang ngày sau, không tính vào tổng giờ.
+- Hôm nay: vẫn hiện mờ trong danh sách với nhãn "bỏ qua" (giống việc đã xong).
+- Lịch sử: hiện với nhãn "bỏ qua".
+- Bấm nhầm thì "Hủy bỏ qua" trong ngày (giống bỏ tick việc đã xong).
+- Việc lặp lại: chỉ bỏ qua ngày hôm đó, hôm sau vẫn tạo bình thường.
+- Việc chưa xong giữ nguyên như Phiên bản 3: tự chuyển sang ngày tiếp theo, việc lặp lại chưa xong ghi "chưa xong" trong lịch sử.
+
+### Giờ công
+
+- Nhập giờ với bước 0.1h (ví dụ 0.1, 0.3, 1.2).
+- Tab Công việc: tổng giờ so với 8 tiếng/ngày, ví dụ `6.5h / 8h`, có thanh tiến độ. Cảnh báo khi vượt 8h.
+- Badge giờ hiện `thực tế/dự kiến`, ví dụ `1.5/2h`, màu đỏ nếu vượt dự kiến.
+
+### Bấm giờ (giờ thực tế)
+
+- Nút ▶ trên mỗi việc để bắt đầu bấm giờ. Mỗi lúc chỉ một việc chạy; bắt đầu việc khác thì việc đang chạy tự dừng.
+- Việc đang chạy hiện ngay trên danh sách: chấm nhấp nháy, đồng hồ và nút ⏸ thay cho ▶. Không có thanh "Đang làm" riêng.
+- Tự chuyển việc: tick xong (trên danh sách hoặc trong panel) hoặc bỏ qua việc đang chạy thì giờ được lưu và tự bắt đầu việc tiếp theo trong danh sách (theo thứ tự ưu tiên, bỏ qua việc đã xong / bỏ qua). Hết việc thì dừng.
+- Chỉ chuyển trong loại đang xem (Công việc hoặc Cuộc sống).
+- Quên tắt: việc Công việc tự dừng lúc 12h và 18h, mọi việc tự dừng lúc 0h.
+- Giờ thực tế vẫn sửa tay được trong panel (bước 0.1h) để chỉnh khi bấm sai.
+- Tải lại trang hoặc mở trên máy khác vẫn thấy đồng hồ đang chạy.
+
+### Task con
+
+- Chia một việc thành các bước nhỏ dạng checklist, quản lý trong panel chi tiết: thêm (Enter), sửa tên, tick, xóa, kéo thả sắp xếp.
+- Danh sách hiện tiến độ trên việc cha, ví dụ `☑ 2/5`.
+- Task con không có giờ, hạn chót hay bấm giờ riêng; những thứ đó vẫn tính trên việc cha.
+- Tick hết task con không tự đánh dấu xong việc cha, chỉ gợi ý "Đã xong hết bước, đánh dấu xong?".
+- Việc chưa xong chuyển sang ngày sau thì giữ nguyên trạng thái task con.
+- Việc lặp lại: task con thuộc mẫu, mỗi ngày tạo lại với tất cả bước chưa tick. Thêm, xóa, đổi tên task con của việc hôm nay thì cập nhật luôn mẫu; tick chỉ áp dụng cho ngày đó.
+
+### Giao diện
+
+- Chuyển giao diện sang React (xem ARCHITECTURE mục Định hướng). Chức năng giữ nguyên.
+- Mở panel chi tiết không làm lệch danh sách: panel trượt vào từ bên phải, đè lên phần trống.
+- Thay thanh tab bằng nút gạt nhỏ `Công việc | Cuộc sống` ở đầu trang. Bỏ tab Tất cả (chưa cần).
+- Thiết kế lại cho đẹp hơn:
+  - Mỗi việc 2 dòng: tên ở trên, nhãn (hạn, lặp lại, từ ngày) ở dưới.
+  - Thanh tiến độ giờ thay cho dòng chữ tổng giờ.
+  - Khoảng cách, cỡ chữ, màu sắc thống nhất; giữ chế độ sáng/tối.
+
 ## Dự kiến
 
-- Giờ thực tế (so sánh với giờ dự kiến)
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
 - Ghi chú dạng nhật ký (nhiều ghi chú có thời gian)
 - Lọc: tất cả / đang làm / đã xong
