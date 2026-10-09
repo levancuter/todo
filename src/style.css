@@ -842,6 +842,123 @@ button.text {
   color: #fff;
 }
 
+/* Steps (subtasks) */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.steps-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+#steps-count {
+  font-weight: 600;
+  color: var(--chip-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar.thin {
+  height: 4px;
+}
+
+#detail-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  background: var(--card);
+  border-radius: 8px;
+  transition: transform 150ms ease;
+}
+
+.step:hover .row-action,
+.step .row-action:focus-visible {
+  opacity: 1;
+}
+
+#detail-steps .lifted {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow);
+}
+
+#detail-steps .dragging {
+  transition: none;
+}
+
+.check.small {
+  width: 24px;
+  height: 24px;
+}
+
+.check.small .box {
+  width: 16px;
+  height: 16px;
+}
+
+.step-text {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 14px;
+}
+
+.step.done .step-text {
+  color: var(--subtle);
+  text-decoration: line-through;
+}
+
+.step-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.step-add input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text);
+}
+
+#steps-hint {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tag.progress.all {
+  background: var(--cat-soft);
+  color: var(--cat);
+}
+
 .detail-foot {
   margin-top: auto;
   display: flex;

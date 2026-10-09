@@ -29,6 +29,15 @@ const PATHS = {
       <path d="M21 13v1a4 4 0 0 1-4 4H3" />
     </>
   ),
+  listCheck: (
+    <>
+      <path d="M3 6l1.5 1.5L7 5" />
+      <path d="M3 13l1.5 1.5L7 12" />
+      <path d="M11 6h10" />
+      <path d="M11 13h10" />
+      <path d="M11 20h10" />
+    </>
+  ),
   logout: (
     <>
       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />

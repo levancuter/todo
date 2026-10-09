@@ -75,6 +75,7 @@ users/{uid}/meta/app                // cờ nâng cấp dữ liệu
 - React 19, build bằng Vite (`@vitejs/plugin-react`).
 - `main.jsx` → `App.jsx` (đăng nhập, thanh trên cùng, nút gạt loại việc) → `TodoView.jsx` (ngày, danh sách, lịch sử, việc lặp lại) → `HoursCard.jsx`, `TodoItem.jsx`, `DetailPanel.jsx`.
 - `Icon.jsx`: icon SVG nét mảnh dùng chung, không dùng emoji.
+- `TimerClock.jsx`: đồng hồ đang chạy, chỉ component này vẽ lại mỗi giây. `Steps.jsx`: checklist task con trong panel.
 - Màu theo loại đang xem: `.app[data-tab]` đặt biến CSS `--cat` (tím chàm cho Công việc, xanh mòng két cho Cuộc sống). Có chế độ tối.
 - Panel chi tiết `position: fixed` đè lên bên phải, không đổi bố cục danh sách. Điện thoại: phủ toàn màn hình.
 - `hooks.js`: `useNow` (cập nhật mỗi phút và khi quay lại tab), `useTodos`, `useRoutines` (listener Firestore).
@@ -166,8 +167,12 @@ Tự động trong giờ làm (`autoStart` trong `timer.js`, gọi từ `TodoVie
 
 - Lưu thành mảng `subtasks` trong document của việc, không tạo document riêng, nên không tốn thêm lượt đọc.
 - Mỗi task con có `id` riêng (tạo trên máy) để sửa và kéo thả không nhầm phần tử.
+- Logic thuần ở `subtasks.js`: tiến độ (`progressOf`), danh sách bước không có tick (`stepsOf`, `sameSteps`), bước mới chưa tick (`freshSubtasks`).
+- Tick, thêm, xóa, kéo thả: lưu ngay. Sửa tên: lưu sau khi ngừng gõ; tên rỗng không lưu.
+- Kéo thả bước dùng lại `drag.js` như danh sách việc.
+- Tick hết bước chỉ hiện gợi ý "Đánh dấu xong", không tự đánh dấu việc cha.
 - Mỗi lần sửa ghi lại cả mảng. Sửa cùng một việc trên 2 máy cùng lúc thì lần ghi sau thắng; chấp nhận được vì dùng một mình.
-- Việc lặp lại: mẫu giữ danh sách bước (`id`, `text`). Việc mỗi ngày copy từ mẫu với `done: false`. Thêm, xóa, đổi tên bước của việc hôm nay thì cập nhật mẫu; tick thì không.
+- Việc lặp lại: mẫu giữ danh sách bước (`id`, `text`). Việc mỗi ngày copy từ mẫu với `done: false`. Thêm, xóa, đổi tên, đổi thứ tự bước của việc hôm nay thì cập nhật mẫu; tick thì không (`sameSteps` so sánh bỏ qua tick).
 
 ## Bảo mật
 
