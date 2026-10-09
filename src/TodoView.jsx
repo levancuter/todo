@@ -10,6 +10,7 @@ import HoursCard from "./HoursCard.jsx";
 import Icon from "./Icon.jsx";
 import { orderBetween, sortTodos } from "./order.js";
 import { dueRoutines } from "./routines.js";
+import { sameSteps, stepsOf } from "./subtasks.js";
 import { autoStart, autoStopAt, nextTodo } from "./timer.js";
 import { HistoryItem, TodoItem } from "./TodoItem.jsx";
 import {
@@ -178,6 +179,8 @@ export default function TodoView({ uid, tab, onError }) {
     // Editing today's routine todo also changes the routine for next time
     if (routine && todo.date === today) {
       const shared = Object.fromEntries(Object.entries(fields).filter(([k]) => ROUTINE_FIELDS.includes(k)));
+      // Steps added, removed, renamed or moved; ticks stay on this day only
+      if (fields.subtasks && !sameSteps(fields.subtasks, routine.subtasks)) shared.subtasks = stepsOf(fields.subtasks);
       if (Object.keys(shared).length) updateRoutine(uid, routine.id, shared).catch(onError);
     }
     return updateTodo(uid, id, fields);

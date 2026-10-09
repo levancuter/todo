@@ -58,9 +58,9 @@
 - Chỉ cho việc không lặp lại. Bật lặp lại thì hạn chót bị xóa.
 - Nhãn trong danh sách: `hạn 12/10` (xám), `hạn hôm nay` (cam), `quá hạn 07/10` (đỏ). Việc đã xong không hiện nhãn.
 
-## Phiên bản 5 (đang thiết kế)
+## Phiên bản 5
 
-### Bỏ qua (đã làm)
+### Bỏ qua
 
 Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 
@@ -72,14 +72,14 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Việc lặp lại: chỉ bỏ qua ngày hôm đó, hôm sau vẫn tạo bình thường.
 - Việc chưa xong giữ nguyên như Phiên bản 3: tự chuyển sang ngày tiếp theo, việc lặp lại chưa xong ghi "chưa xong" trong lịch sử.
 
-### Giờ công (đã làm)
+### Giờ công
 
 - Nhập giờ với bước 0.1h (ví dụ 0.1, 0.3, 1.2).
 - Tab Công việc: tổng giờ so với 8 tiếng/ngày, ví dụ `6.5h / 8h`, có thanh tiến độ. Cảnh báo khi vượt 8h.
 - Badge giờ hiện `thực tế/dự kiến`, ví dụ `1.5/2h`, màu đỏ nếu vượt dự kiến.
 - Giờ thực tế sửa tay trong panel (bước 0.1h). Thẻ giờ hiện thêm tổng thực tế.
 
-### Bấm giờ (giờ thực tế) (đã làm)
+### Bấm giờ (giờ thực tế)
 
 - Tự động trong giờ làm (T2–T6, 9h–12h, 13h–18h): luôn có một việc Công việc được bấm giờ, không cần bấm ▶.
   - Việc được chọn: việc Công việc chưa xong đầu tiên theo thứ tự ưu tiên.
@@ -105,16 +105,16 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Việc chưa xong chuyển sang ngày sau thì giữ nguyên trạng thái task con.
 - Việc lặp lại: task con thuộc mẫu, mỗi ngày tạo lại với tất cả bước chưa tick. Thêm, xóa, đổi tên task con của việc hôm nay thì cập nhật luôn mẫu; tick chỉ áp dụng cho ngày đó.
 
-### Tab theo giờ làm (đã làm)
+### Tab theo giờ làm
 
 - Bước vào giờ làm (9h, 13h) thì tự chuyển sang tab Công việc, ra khỏi giờ làm (12h, 18h) thì sang tab Cuộc sống.
 - Giữa các mốc đó vẫn đổi tab bằng tay được.
 
-### Xem chi tiết trong lịch sử (đã làm)
+### Xem chi tiết trong lịch sử
 
 - Bấm vào việc trong lịch sử để mở panel chi tiết ở chế độ chỉ xem: mọi ô bị khóa, không có nút hành động hay xóa.
 
-### Giao diện (đã làm)
+### Giao diện
 
 - Chuyển giao diện sang React (xem ARCHITECTURE mục Định hướng). Chức năng giữ nguyên.
 - Mở panel chi tiết không làm lệch danh sách: panel trượt vào từ bên phải, đè lên phần trống.

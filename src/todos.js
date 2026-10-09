@@ -17,6 +17,7 @@ import { dayKey } from "./dates.js";
 import { db } from "./firebase.js";
 import { DEFAULT_ESTIMATE, estimateOf } from "./hours.js";
 import { sortTodos } from "./order.js";
+import { freshSubtasks, stepsOf, subtasksOf } from "./subtasks.js";
 import { elapsedSeconds } from "./timer.js";
 
 function todosRef(uid) {
@@ -103,6 +104,7 @@ function newTodo(fields) {
     skipped: false,
     actualSeconds: 0,
     timerStartedAt: null,
+    subtasks: [],
     ...fields,
   };
 }
@@ -181,6 +183,7 @@ export function createRoutineTodo(uid, routine, today) {
     doc(todosRef(uid), `${routine.id}_${today}`),
     newTodo({
       text: routine.text,
+      subtasks: freshSubtasks(routine.subtasks),
       estimate: routine.estimate,
       category: routine.category,
       routineId: routine.id,
@@ -200,6 +203,7 @@ export function startRoutine(uid, todo, days, today) {
     estimate: estimateOf(todo),
     category: categoryOf(todo),
     days,
+    subtasks: stepsOf(subtasksOf(todo)),
     lastCreated: today,
     createdAt: serverTimestamp(),
   });

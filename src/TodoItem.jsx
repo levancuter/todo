@@ -3,10 +3,11 @@ import { formatDay } from "./dates.js";
 import { estimateOf, formatHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { repeatLabel } from "./routines.js";
+import { progressOf } from "./subtasks.js";
 import { totalSeconds } from "./timer.js";
 import TimerClock from "./TimerClock.jsx";
 
-// Labels under the title: repeat, skipped, deadline, carried over, unfinished
+// Labels under the title: repeat, steps, skipped, deadline, carried over, unfinished
 function tagsOf(todo, { today, routine, history }) {
   const tags = [];
   if (todo.routineId) {
@@ -14,6 +15,15 @@ function tagsOf(todo, { today, routine, history }) {
       <span key="repeat" className="tag repeat">
         <Icon name="repeat" size={12} />
         {repeatLabel(routine?.days) ?? "Lặp lại"}
+      </span>,
+    );
+  }
+  const steps = progressOf(todo);
+  if (steps.total) {
+    tags.push(
+      <span key="steps" className={steps.done === steps.total ? "tag progress all" : "tag progress"}>
+        <Icon name="listCheck" size={12} />
+        {steps.done}/{steps.total}
       </span>,
     );
   }

@@ -3,6 +3,8 @@ import { categoryOf } from "./category.js";
 import { estimateOf, parseHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "./routines.js";
+import Steps from "./Steps.jsx";
+import { subtasksOf } from "./subtasks.js";
 import { totalSeconds } from "./timer.js";
 import TimerClock from "./TimerClock.jsx";
 
@@ -26,6 +28,7 @@ function valuesOf(todo) {
     note: todo.note || "",
     category: categoryOf(todo),
     deadline: todo.deadline || "",
+    subtasks: subtasksOf(todo),
   };
 }
 
@@ -289,6 +292,18 @@ export default function DetailPanel({ ref, todo, routine, readOnly, pauseLocked,
           </button>
         ))}
       </div>
+
+      <Steps
+        steps={values?.subtasks ?? []}
+        readOnly={readOnly}
+        todoDone={!!todo?.done}
+        onSave={(next) => saveNow("subtasks", next, next)}
+        // An empty step name is not saved; leaving the field puts the old name back
+        onType={(next) => edit("subtasks", next, next.some((s) => !s.text.trim()) ? null : next)}
+        onFocus={() => (focused.current = "subtasks")}
+        onBlur={() => blur("subtasks")}
+        onMarkDone={() => latest.current.onDone(id, true)}
+      />
 
       <label className="field">
         Ghi chú
