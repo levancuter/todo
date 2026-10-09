@@ -34,7 +34,8 @@ const setDeadline = async (value) => {
   await page.$eval(
     "#detail-deadline",
     (el, v) => {
-      el.value = v;
+      // Native setter, like a real date pick: React ignores a plain `el.value = v`
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v);
       el.dispatchEvent(new Event("change", { bubbles: true }));
     },
     value,

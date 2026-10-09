@@ -2,10 +2,6 @@ const SETTLE_MS = 150;
 
 let state = null;
 
-export function isDragging() {
-  return state !== null;
-}
-
 // Drag items of `list` by their `.handle`. The dragged item follows the
 // pointer with a transform and other items slide out of the way; the DOM is
 // not reordered. After the drop, onEnd(id, ids) gets the new id order, or

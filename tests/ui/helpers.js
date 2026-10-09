@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import react from "@vitejs/plugin-react";
 import puppeteer from "puppeteer-core";
 import { createServer } from "vite";
 
@@ -25,6 +26,7 @@ export async function startApp() {
     root,
     cacheDir: "node_modules/.vite-test",
     logLevel: "error",
+    plugins: [react()],
     server: { port: 5199 },
     resolve: {
       alias: [

@@ -56,11 +56,21 @@ users/{uid}/meta/app                // cờ nâng cấp dữ liệu
 
 ## Chi tiết việc
 
-- `main.js` giữ `selectedId` (việc đang mở). Panel đọc dữ liệu từ danh sách `todos` hiện có, không tải thêm.
+- `TodoView.jsx` giữ `selectedId` (việc đang mở). Panel đọc dữ liệu từ danh sách `todos` hiện có, không tải thêm.
 - Sửa trong panel: ghi bằng `updateDoc` sau khi ngừng gõ ~500ms.
 - Khi Firestore gửi dữ liệu mới, không ghi đè ô đang được gõ (đang có focus).
 - `selectedId` không còn trong `todos` (bị xóa) thì đóng panel.
 - Tổng giờ tính trên client từ `todos`, không lưu vào Firestore.
+
+## Cấu trúc giao diện (React)
+
+- React 19, build bằng Vite (`@vitejs/plugin-react`).
+- `main.jsx` → `App.jsx` (đăng nhập) → `TodoView.jsx` (tab, ngày, danh sách, lịch sử, việc lặp lại) → `TodoItem.jsx`, `DetailPanel.jsx`.
+- `hooks.js`: `useNow` (cập nhật mỗi phút và khi quay lại tab), `useTodos`, `useRoutines` (listener Firestore).
+- Các module logic thuần và `todos.js` không phụ thuộc React.
+- Kéo thả vẫn dùng `drag.js` (thao tác DOM trực tiếp). Thả xong, `TodoView` cập nhật thứ tự rồi xóa `transform` của các dòng.
+- React giữ phần tử DOM theo `key`, nên dữ liệu mới về giữa lúc bấm không làm mất cú bấm.
+- Panel gọi `flush()` (lưu ngay) khi đóng, `discard()` (bỏ chỉnh sửa) khi việc bị xóa, qua `ref`.
 
 ## Làm mới mỗi ngày
 
@@ -111,7 +121,7 @@ Nếu tải toàn bộ todos, lịch sử tăng mỗi ngày nên sau khoảng 6 
 - `isWorkTime(now)`: đang trong giờ làm hay không. Dùng để chọn tab mặc định khi mở app, và chọn loại khi tạo việc ở tab Tất cả.
 - `workHoursLeft(now)`: số giờ làm còn lại hôm nay, không tính nghỉ trưa. Ví dụ 11h còn 6h, 12h30 còn 5h, sau 18h hoặc cuối tuần còn 0h.
 - Cảnh báo khi giờ việc Công việc còn lại > `workHoursLeft`.
-- Tab đang chọn chỉ lưu trên máy (biến trong `main.js`), không lưu Firestore.
+- Tab đang chọn chỉ lưu trên máy (state trong `TodoView.jsx`), không lưu Firestore.
 
 ## Bảo mật
 
