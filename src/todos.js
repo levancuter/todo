@@ -17,6 +17,7 @@ import { dayKey } from "./dates.js";
 import { db } from "./firebase.js";
 import { DEFAULT_ESTIMATE, estimateOf } from "./hours.js";
 import { sortTodos } from "./order.js";
+import { elapsedSeconds } from "./timer.js";
 
 function todosRef(uid) {
   return collection(db, "users", uid, "todos");
@@ -99,6 +100,7 @@ function newTodo(fields) {
     deadline: null,
     skipped: false,
     actualSeconds: 0,
+    timerStartedAt: null,
     ...fields,
   };
 }
@@ -115,14 +117,47 @@ export function setOrder(uid, id, order) {
   return updateTodo(uid, id, { order });
 }
 
-export function setDone(uid, id, done, today) {
-  return updateTodo(uid, id, { done, skipped: false, doneDate: done ? today : null });
+export function doneFields(done, today) {
+  return { done, skipped: false, doneDate: done ? today : null };
 }
 
 // Skipped = closed without doing it. Stored as done so the day queries
 // treat it like a done todo: shown today, not carried over, kept in history.
+export function skipFields(skipped, today) {
+  return { done: skipped, skipped, doneDate: skipped ? today : null };
+}
+
+export function setDone(uid, id, done, today) {
+  return updateTodo(uid, id, doneFields(done, today));
+}
+
 export function setSkipped(uid, id, skipped, today) {
-  return updateTodo(uid, id, { done: skipped, skipped, doneDate: skipped ? today : null });
+  return updateTodo(uid, id, skipFields(skipped, today));
+}
+
+// Adds the running time to actualSeconds
+function stopFields(todo, at) {
+  return { actualSeconds: (todo.actualSeconds || 0) + elapsedSeconds(todo, at), timerStartedAt: null };
+}
+
+// Only one timer runs: the ones in `running` stop in the same write
+export function startTimer(uid, id, running, now) {
+  const batch = writeBatch(db);
+  for (const todo of running) batch.update(doc(todosRef(uid), todo.id), stopFields(todo, now));
+  batch.update(doc(todosRef(uid), id), { timerStartedAt: now });
+  return batch.commit();
+}
+
+export function stopTimer(uid, todo, at) {
+  return updateTodo(uid, todo.id, stopFields(todo, at));
+}
+
+// Close the running todo (done or skipped) and start the next one in one write
+export function finishRunning(uid, todo, fields, next, now) {
+  const batch = writeBatch(db);
+  batch.update(doc(todosRef(uid), todo.id), { ...stopFields(todo, now), ...fields });
+  if (next) batch.update(doc(todosRef(uid), next.id), { timerStartedAt: now });
+  return batch.commit();
 }
 
 export function removeTodo(uid, id) {

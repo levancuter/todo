@@ -53,7 +53,25 @@ const PATHS = {
 
 const GRIP = [6, 12, 18].flatMap((y) => [9, 15].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" />));
 
+// Filled icons
+const SOLID = {
+  play: <path d="M7 4.5v15l12-7.5z" />,
+  pause: (
+    <>
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </>
+  ),
+};
+
 export default function Icon({ name, size = 16, strokeWidth = 2 }) {
+  if (SOLID[name]) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        {SOLID[name]}
+      </svg>
+    );
+  }
   if (name === "grip") {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

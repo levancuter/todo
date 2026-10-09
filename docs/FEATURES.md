@@ -79,14 +79,15 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Badge giờ hiện `thực tế/dự kiến`, ví dụ `1.5/2h`, màu đỏ nếu vượt dự kiến.
 - Giờ thực tế sửa tay trong panel (bước 0.1h). Thẻ giờ hiện thêm tổng thực tế.
 
-### Bấm giờ (giờ thực tế)
+### Bấm giờ (giờ thực tế) (đã làm)
 
 - Nút ▶ trên mỗi việc để bắt đầu bấm giờ. Mỗi lúc chỉ một việc chạy; bắt đầu việc khác thì việc đang chạy tự dừng.
 - Việc đang chạy hiện ngay trên danh sách: chấm nhấp nháy, đồng hồ và nút ⏸ thay cho ▶. Không có thanh "Đang làm" riêng.
 - Tự chuyển việc: tick xong (trên danh sách hoặc trong panel) hoặc bỏ qua việc đang chạy thì giờ được lưu và tự bắt đầu việc tiếp theo trong danh sách (theo thứ tự ưu tiên, bỏ qua việc đã xong / bỏ qua). Hết việc thì dừng.
 - Chỉ chuyển trong loại đang xem (Công việc hoặc Cuộc sống).
 - Quên tắt: việc Công việc tự dừng lúc 12h và 18h, mọi việc tự dừng lúc 0h.
-- Giờ thực tế vẫn sửa tay được trong panel (bước 0.1h) để chỉnh khi bấm sai.
+- Giờ thực tế vẫn sửa tay được trong panel (bước 0.1h) để chỉnh khi bấm sai. Ô này khóa khi đồng hồ đang chạy.
+- Panel có nút Bắt đầu / Tạm dừng và đồng hồ đang chạy.
 - Tải lại trang hoặc mở trên máy khác vẫn thấy đồng hồ đang chạy.
 
 ### Task con

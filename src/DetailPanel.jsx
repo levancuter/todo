@@ -1,8 +1,10 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { categoryOf } from "./category.js";
-import { actualOf, estimateOf, parseHours, round1 } from "./hours.js";
+import { estimateOf, parseHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "./routines.js";
+import { totalSeconds } from "./timer.js";
+import TimerClock from "./TimerClock.jsx";
 
 const SAVE_DELAY_MS = 500;
 const DAYS = [
@@ -20,7 +22,7 @@ function valuesOf(todo) {
   return {
     text: todo.text,
     estimate: String(estimateOf(todo)),
-    actual: String(round1(actualOf(todo))),
+    actual: String(round1(totalSeconds(todo, Date.now()) / 3600)),
     note: todo.note || "",
     category: categoryOf(todo),
     deadline: todo.deadline || "",
@@ -28,7 +30,8 @@ function valuesOf(todo) {
 }
 
 // ref exposes flush() (save now) and discard() (drop unsaved edits).
-// Handlers: onSave(id, fields) -> Promise, onDone(id, done), onSkip(id, skipped), onRepeat(id, days | null),
+// Handlers: onSave(id, fields) -> Promise, onDone(id, done), onSkip(id, skipped),
+// onStartTimer(id), onPauseTimer(todo), onRepeat(id, days | null),
 // onDelete(id), onClose(), onError(err)
 export default function DetailPanel({ ref, todo, routine, ...handlers }) {
   const latest = useRef(handlers);
@@ -177,10 +180,28 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
       </div>
 
       <div className="detail-actions">
+        {todo?.timerStartedAt ? (
+          <button id="detail-timer" type="button" className="chip-button dark" onClick={() => latest.current.onPauseTimer(todo)}>
+            <Icon name="pause" size={14} />
+            Tạm dừng
+          </button>
+        ) : (
+          <button
+            id="detail-timer"
+            type="button"
+            className="chip-button dark"
+            disabled={!!todo?.done}
+            onClick={() => latest.current.onStartTimer(id)}
+          >
+            <Icon name="play" size={14} />
+            Bắt đầu
+          </button>
+        )}
         <button id="detail-skip" type="button" className="chip-button" onClick={() => latest.current.onSkip(id, !todo?.skipped)}>
           <Icon name="skip" size={14} />
           {todo?.skipped ? "Hủy bỏ qua" : "Bỏ qua"}
         </button>
+        {todo?.timerStartedAt && <TimerClock todo={todo} id="detail-clock" />}
       </div>
 
       <div className="detail-grid">
@@ -208,6 +229,8 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
               min="0"
               step="0.1"
               inputMode="decimal"
+              disabled={!!todo?.timerStartedAt}
+              title={todo?.timerStartedAt ? "Tạm dừng để sửa" : undefined}
               {...typing("actual")}
               onChange={(e) => {
                 const hours = parseHours(e.target.value);

@@ -39,6 +39,12 @@ test("sumHours leaves skipped todos out of the plan but keeps their actual time"
   assert.deepEqual(sumHours(todos), { total: 2, left: 2, done: 0, actual: 0.75 });
 });
 
+test("sumHours adds the running timer to actual time", () => {
+  const now = new Date(2026, 9, 8, 10, 30).getTime();
+  const todos = [{ estimate: 2, done: false, actualSeconds: 1800, timerStartedAt: now - 1800 * 1000 }];
+  assert.equal(sumHours(todos, now).actual, 1);
+});
+
 test("formatHours rounds to 0.1h and hides float noise", () => {
   assert.equal(formatHours(2.5), "2.5h");
   assert.equal(formatHours(0.1 + 0.2), "0.3h");

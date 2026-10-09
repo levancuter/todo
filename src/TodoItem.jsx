@@ -1,8 +1,10 @@
 import { carriedFrom, deadlineStatus } from "./daily.js";
 import { formatDay } from "./dates.js";
-import { actualOf, estimateOf, formatHours, round1 } from "./hours.js";
+import { estimateOf, formatHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { repeatLabel } from "./routines.js";
+import { totalSeconds } from "./timer.js";
+import TimerClock from "./TimerClock.jsx";
 
 // Labels under the title: repeat, skipped, deadline, carried over, unfinished
 function tagsOf(todo, { today, routine, history }) {
@@ -62,10 +64,10 @@ function Body({ todo, tags, onClick }) {
   );
 }
 
-// "1.5/2h" once time was spent, red when over the estimate
+// "1.5/2h" once time was spent (running timer included), red when over the estimate
 function Estimate({ todo }) {
   const estimate = estimateOf(todo);
-  const actual = actualOf(todo);
+  const actual = totalSeconds(todo, Date.now()) / 3600;
   if (actual < 0.05) return <span className="estimate">{formatHours(estimate)}</span>;
   return (
     <span className={actual > estimate ? "estimate over" : "estimate"}>
@@ -74,8 +76,14 @@ function Estimate({ todo }) {
   );
 }
 
-export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onSelect, onDelete }) {
-  const className = ["todo", todo.done && (todo.skipped ? "skipped" : "done"), selected && "selected"]
+export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onStart, onPause, onSelect, onDelete }) {
+  const running = !!todo.timerStartedAt;
+  const className = [
+    "todo",
+    todo.done && (todo.skipped ? "skipped" : "done"),
+    running && "running",
+    selected && "selected",
+  ]
     .filter(Boolean)
     .join(" ");
   return (
@@ -85,7 +93,19 @@ export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onS
       </span>
       <Check todo={todo} onToggle={onToggle} />
       <Body todo={todo} tags={tagsOf(todo, { today, routine })} onClick={() => onSelect(todo.id)} />
+      {running && <TimerClock todo={todo} />}
       <Estimate todo={todo} />
+      {running ? (
+        <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
+          <Icon name="pause" size={12} />
+        </button>
+      ) : (
+        !todo.done && (
+          <button type="button" className="timer-button" title="Bắt đầu bấm giờ" aria-label="Bắt đầu bấm giờ" onClick={() => onStart(todo.id)}>
+            <Icon name="play" size={12} />
+          </button>
+        )
+      )}
       {!todo.done && (
         <button type="button" className="row-action skip" title="Bỏ qua" aria-label="Bỏ qua" onClick={() => onSkip(todo.id)}>
           <Icon name="skip" size={14} />

@@ -680,6 +680,77 @@ button.text {
   background: var(--chip);
 }
 
+.chip-button.dark {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--card);
+}
+
+.chip-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.detail-actions .timer-clock {
+  align-self: center;
+  margin-left: auto;
+}
+
+/* Timer */
+
+.timer-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cat);
+}
+
+.detail-actions .timer-clock {
+  padding-top: 0;
+}
+
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.timer-button {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--chip-text);
+}
+
+.timer-button:hover {
+  border-color: var(--cat);
+  color: var(--cat);
+}
+
+.timer-button.running {
+  border-color: var(--cat);
+  background: var(--cat);
+  color: #fff;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

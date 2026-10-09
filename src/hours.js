@@ -1,3 +1,5 @@
+import { elapsedSeconds } from "./timer.js";
+
 export const DEFAULT_ESTIMATE = 3;
 
 // Hours use 0.1 steps; also hides float noise like 0.1 + 0.2
@@ -22,13 +24,14 @@ export function parseHours(value) {
   return round1(n);
 }
 
-// Skipped todos are not part of the plan, but their actual time still counts
-export function sumHours(todos) {
+// Skipped todos are not part of the plan, but their actual time still counts.
+// Actual time includes running timers at `now`.
+export function sumHours(todos, now = Date.now()) {
   let total = 0;
   let left = 0;
   let actual = 0;
   for (const t of todos) {
-    actual += actualOf(t);
+    actual += actualOf(t) + elapsedSeconds(t, now) / 3600;
     if (t.skipped) continue;
     const h = estimateOf(t);
     total += h;

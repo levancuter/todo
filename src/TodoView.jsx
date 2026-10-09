@@ -10,6 +10,7 @@ import HoursCard from "./HoursCard.jsx";
 import Icon from "./Icon.jsx";
 import { orderBetween, sortTodos } from "./order.js";
 import { dueRoutines } from "./routines.js";
+import { autoStopAt, nextTodo } from "./timer.js";
 import { HistoryItem, TodoItem } from "./TodoItem.jsx";
 import {
   addTodo,
@@ -17,9 +18,12 @@ import {
   loadDay,
   migrateV3,
   removeTodo,
-  setDone,
+  doneFields,
+  finishRunning,
   setOrder,
-  setSkipped,
+  skipFields,
+  startTimer,
+  stopTimer,
   startRoutine,
   stopRoutine,
   updateRoutine,
@@ -66,6 +70,19 @@ export default function TodoView({ uid, tab, onError }) {
       createRoutineTodo(uid, routine, today).catch(onError);
     }
   }, [uid, routines, fromServer, today]);
+
+  // Stop forgotten timers: work todos at 12h and 18h, all todos at midnight
+  const autoStopped = useRef(new Set());
+  useEffect(() => {
+    for (const todo of todos) {
+      if (!todo.timerStartedAt) continue;
+      const cutoff = autoStopAt(todo);
+      const key = `${todo.id}_${todo.timerStartedAt}`;
+      if (Date.now() < cutoff || autoStopped.current.has(key)) continue;
+      autoStopped.current.add(key);
+      stopTimer(uid, todo, cutoff).catch(onError);
+    }
+  }, [uid, todos, now]);
 
   useEffect(() => makeSortable(listRef.current, (id, ids) => onDrop.current(id, ids)), []);
 
@@ -147,6 +164,24 @@ export default function TodoView({ uid, tab, onError }) {
     return updateTodo(uid, id, fields);
   }
 
+  // Done or skipped. Closing the running todo starts the next one of its category.
+  function finish(id, fields) {
+    const todo = todos.find((t) => t.id === id);
+    if (todo?.timerStartedAt && fields.done) {
+      finishRunning(uid, todo, fields, nextTodo(visible, todo), Date.now()).catch(onError);
+    } else {
+      updateTodo(uid, id, fields).catch(onError);
+    }
+  }
+  const toggleDone = (id, done) => finish(id, doneFields(done, today));
+  const toggleSkip = (id, skipped) => finish(id, skipFields(skipped, today));
+
+  function startTimerOn(id) {
+    const running = visible.filter((t) => t.timerStartedAt && t.id !== id);
+    startTimer(uid, id, running, Date.now()).catch(onError);
+  }
+  const pauseTimer = (todo) => stopTimer(uid, todo, Date.now()).catch(onError);
+
   function setRepeat(id, days) {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
@@ -179,8 +214,10 @@ export default function TodoView({ uid, tab, onError }) {
         today={today}
         routine={routineOf(todo)}
         selected={todo.id === selectedId}
-        onToggle={(id, done) => setDone(uid, id, done, today).catch(onError)}
-        onSkip={(id) => setSkipped(uid, id, true, today).catch(onError)}
+        onToggle={toggleDone}
+        onSkip={(id) => toggleSkip(id, true)}
+        onStart={startTimerOn}
+        onPause={pauseTimer}
         onSelect={select}
         onDelete={(id) => removeTodo(uid, id).catch(onError)}
       />
@@ -259,8 +296,10 @@ export default function TodoView({ uid, tab, onError }) {
         todo={selected}
         routine={selected ? routineOf(selected) : undefined}
         onSave={saveTodo}
-        onDone={(id, done) => setDone(uid, id, done, today).catch(onError)}
-        onSkip={(id, skipped) => setSkipped(uid, id, skipped, today).catch(onError)}
+        onDone={toggleDone}
+        onSkip={toggleSkip}
+        onStartTimer={startTimerOn}
+        onPauseTimer={pauseTimer}
         onRepeat={setRepeat}
         onDelete={(id) => removeTodo(uid, id).catch(onError)}
         onClose={close}
