@@ -1,7 +1,8 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isWorkTime } from "./category.js";
 import { auth, googleProvider } from "./firebase.js";
+import { useNow } from "./hooks.js";
 import Icon from "./Icon.jsx";
 import TodoView from "./TodoView.jsx";
 
@@ -13,7 +14,17 @@ const TABS = [
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined while loading
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState(() => (isWorkTime() ? "work" : "life"));
+  const working = isWorkTime(useNow());
+  const [tab, setTab] = useState(working ? "work" : "life");
+
+  // Entering or leaving work time (9h, 12h, 13h, 18h) switches the tab.
+  // In between, the user can switch freely.
+  const wasWorking = useRef(working);
+  useEffect(() => {
+    if (wasWorking.current === working) return;
+    wasWorking.current = working;
+    setTab(working ? "work" : "life");
+  }, [working]);
 
   useEffect(
     () =>

@@ -1,4 +1,5 @@
-// Timer with auto-advance and auto-stop. Clock starts on Thursday 2026-10-08 10:00.
+// Automatic timer: during work time a work todo is always timed.
+// Clock starts on Thursday 2026-10-08 10:00 (work time).
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { at, openPage, startApp, wait } from "./helpers.js";
@@ -34,52 +35,44 @@ after(async () => {
   await app?.close();
 });
 
-const running = async () =>
+const running = () =>
   page.evaluate(() =>
-    [...window.__writes.reduce((ids, w) => ids.add(w[1]), new Set())]
-      .filter((path) => path.startsWith("todos/") && window.__get(path)?.timerStartedAt)
-      .map((path) => path.slice(6)),
+    ["a", "b", "c", "d", "l1", ...window.__writes.map((w) => w[1].slice(6))]
+      .filter((id, i, all) => all.indexOf(id) === i && window.__get("todos/" + id)?.timerStartedAt)
+      .sort(),
   );
 const setNow = (ms) => page.evaluate((t) => window.__setNow(t), ms);
 const play = (id) => ui.click(`${ui.li(id)} .timer-button`);
+const activeTab = () => page.$eval("#tabs .active", (el) => el.dataset.tab);
+const near = (ms, expected, seconds = 10) => Math.abs(ms - expected) < seconds * 1000;
 
-test("start a timer from the list", async () => {
-  await play("a");
-  const a = await ui.get("todos/a");
-  assert.ok(Math.abs(a.timerStartedAt - at(8, 10)) < 5000);
+test("nothing starts before the data comes from the server", async () => {
+  assert.deepEqual(await running(), []);
+});
+
+test("work time: the first open work todo is timed from the period start", async () => {
+  await page.evaluate(() => window.__goOnline());
+  await wait(150);
+  assert.deepEqual(await running(), ["a"]);
+  assert.equal((await ui.get("todos/a")).timerStartedAt, at(8, 9)); // app opened late
   assert.ok(await page.$eval(ui.li("a"), (el) => el.classList.contains("running")));
-  assert.equal(await page.$eval(`${ui.li("a")} .timer-button`, (el) => el.getAttribute("aria-label")), "Tạm dừng bấm giờ");
+  assert.equal(await page.$(`${ui.li("a")} .timer-button`), null); // no pause during work time
   assert.equal(await page.$eval(`${ui.li("b")} .timer-button`, (el) => el.getAttribute("aria-label")), "Bắt đầu bấm giờ");
+  await wait(1100);
+  assert.match(await ui.text(`${ui.li("a")} .timer-clock`), /^1:00:0\d$/);
 });
 
-test("the clock counts every second", async () => {
-  await setNow(at(8, 10, 30));
-  await wait(1200);
-  // Started a moment after 10:00, so about 30 minutes later
-  assert.match(await ui.text(`${ui.li("a")} .timer-clock`), /^0:(29:5\d|30:0\d)$/);
-});
-
-test("pause adds the time to actual hours", async () => {
-  await ui.click(`${ui.li("a")} .timer-button`);
-  const a = await ui.get("todos/a");
-  assert.equal(a.timerStartedAt, null);
-  assert.ok(a.actualSeconds >= 1800 && a.actualSeconds < 1815, a.actualSeconds);
-  assert.equal(await page.$(`${ui.li("a")} .timer-clock`), null);
-  assert.equal(await ui.text(`${ui.li("a")} .estimate`), "0.5/2h");
-});
-
-test("only one timer runs at a time", async () => {
-  await play("a");
+test("▶ on another work todo switches the timer", async () => {
   await play("b");
   assert.deepEqual(await running(), ["b"]);
-  assert.equal((await ui.get("todos/a")).timerStartedAt, null);
+  const a = await ui.get("todos/a");
+  assert.ok(a.actualSeconds >= 3600 && a.actualSeconds < 3615, a.actualSeconds);
+  assert.ok(near(a.timerStoppedAt, at(8, 10)));
 });
 
 test("ticking the running todo starts the next one", async () => {
   await ui.click(`${ui.li("b")} input[type=checkbox]`);
-  const b = await ui.get("todos/b");
-  assert.equal(b.done, true);
-  assert.equal(b.timerStartedAt, null);
+  assert.equal((await ui.get("todos/b")).done, true);
   assert.deepEqual(await running(), ["a"]); // first open todo in order
 });
 
@@ -89,48 +82,73 @@ test("skipping the running todo keeps its time and starts the next one", async (
   await ui.click(`${ui.li("a")} .row-action.skip`);
   const a = await ui.get("todos/a");
   assert.equal(a.skipped, true);
-  // Restarted a moment after 10:30, skipped at 10:40
-  assert.ok(a.actualSeconds - before > 585 && a.actualSeconds - before < 615, a.actualSeconds - before);
+  const added = a.actualSeconds - before;
+  assert.ok(added > 2380 && added < 2415, added); // about 10:00 -> 10:40
   assert.deepEqual(await running(), ["c"]);
 });
 
-test("auto-advance stays in the category and stops at the end", async () => {
-  await ui.click(`${ui.li("c")} input[type=checkbox]`);
-  assert.deepEqual(await running(), ["d"]);
-  await ui.click(`${ui.li("d")} input[type=checkbox]`);
-  assert.deepEqual(await running(), []); // the life todo is not started
-});
-
-test("start and pause from the panel", async () => {
-  await ui.tab("life");
-  await ui.clickText("l1");
-  assert.equal(await ui.text("#detail-timer"), "Bắt đầu");
-  await ui.click("#detail-timer");
-  assert.deepEqual(await running(), ["l1"]);
-  assert.equal(await ui.text("#detail-timer"), "Tạm dừng");
+test("the panel has no pause for work todos during work time", async () => {
+  await ui.clickText("c");
+  assert.equal(await page.$("#detail-timer"), null);
   assert.ok(await page.$("#detail-clock"));
   assert.equal(await page.$eval("#detail-actual", (el) => el.disabled), true);
-  await ui.click("#detail-timer");
-  assert.deepEqual(await running(), []);
-  assert.equal(await page.$("#detail-clock"), null);
-  assert.equal(await page.$eval("#detail-actual", (el) => el.disabled), false);
   await page.keyboard.press("Escape");
 });
 
-test("a forgotten work timer stops at 12h", async () => {
-  await ui.tab("work");
+test("after all work is done, a new todo is timed from now", async () => {
+  await ui.click(`${ui.li("c")} input[type=checkbox]`);
+  assert.deepEqual(await running(), ["d"]);
+  await ui.click(`${ui.li("d")} input[type=checkbox]`);
+  assert.deepEqual(await running(), []);
   await page.type("#new-todo", "Báo cáo tuần\n");
-  await wait(100);
+  await wait(200);
   const id = (await ui.ids()).at(-1);
-  await setNow(at(8, 11, 50));
-  await play(id);
-  await ui.refreshClock(at(8, 12, 10));
-  const todo = await ui.get("todos/" + id);
-  assert.equal(todo.timerStartedAt, null);
-  assert.ok(todo.actualSeconds > 590 && todo.actualSeconds <= 600, todo.actualSeconds);
+  assert.deepEqual(await running(), [id]);
+  // Not from 9:00: a timer already ran in this period
+  assert.ok(near((await ui.get("todos/" + id)).timerStartedAt, at(8, 10, 40)));
 });
 
-test("a forgotten life timer stops at midnight", async () => {
+test("12h: the timer stops and the same todo resumes at 13h; tabs follow work time", async () => {
+  const id = (await ui.ids()).at(-1);
+  await ui.click(`${ui.li("b")} input[type=checkbox]`); // reopen b, before the running todo
+  assert.deepEqual(await running(), [id]);
+
+  await ui.refreshClock(at(8, 12, 10));
+  assert.deepEqual(await running(), []);
+  const stopped = await ui.get("todos/" + id);
+  assert.equal(stopped.timerStoppedAt, at(8, 12));
+  assert.equal(stopped.timerResume, true);
+  assert.equal(await activeTab(), "life");
+
+  await ui.refreshClock(at(8, 13, 5));
+  assert.deepEqual(await running(), [id]); // not b, which is first in order
+  assert.equal((await ui.get("todos/" + id)).timerStartedAt, at(8, 13));
+  assert.equal(await activeTab(), "work");
+});
+
+test("life todos: started and paused by hand; work restarts by itself", async () => {
+  await ui.tab("life");
+  await play("l1");
+  assert.deepEqual(await running(), ["l1"]); // only one timer
+  assert.equal(await page.$eval(`${ui.li("l1")} .timer-button`, (el) => el.getAttribute("aria-label")), "Tạm dừng bấm giờ");
+  await play("l1");
+  await wait(100);
+  assert.deepEqual(await running(), ["b"]); // nothing running in work time: first open work todo
+});
+
+test("outside work time: work timers stop at 18h and can be paused", async () => {
+  await ui.refreshClock(at(8, 18, 30));
+  assert.deepEqual(await running(), []);
+  assert.equal(await activeTab(), "life");
+  await ui.tab("work");
+  await play("b");
+  assert.deepEqual(await running(), ["b"]);
+  assert.equal(await page.$eval(`${ui.li("b")} .timer-button`, (el) => el.getAttribute("aria-label")), "Tạm dừng bấm giờ");
+  await play("b");
+  assert.deepEqual(await running(), []);
+});
+
+test("a life timer stops at midnight", async () => {
   await ui.tab("life");
   const before = (await ui.get("todos/l1")).actualSeconds;
   await play("l1");
@@ -138,7 +156,7 @@ test("a forgotten life timer stops at midnight", async () => {
   const l1 = await ui.get("todos/l1");
   assert.equal(l1.timerStartedAt, null);
   const added = l1.actualSeconds - before;
-  assert.ok(added > 42590 && added <= 42600, added); // 12:10 -> 24:00
+  assert.ok(added > 19790 && added <= 19800, added); // 18:30 -> 24:00
 });
 
 test("no page errors", () => {

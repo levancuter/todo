@@ -76,7 +76,8 @@ function Estimate({ todo }) {
   );
 }
 
-export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onStart, onPause, onSelect, onDelete }) {
+// pauseLocked: a work todo during work time keeps its timer running
+export function TodoItem({ todo, today, routine, selected, pauseLocked, onToggle, onSkip, onStart, onPause, onSelect, onDelete }) {
   const running = !!todo.timerStartedAt;
   const className = [
     "todo",
@@ -96,9 +97,11 @@ export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onS
       {running && <TimerClock todo={todo} />}
       <Estimate todo={todo} />
       {running ? (
-        <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
-          <Icon name="pause" size={12} />
-        </button>
+        !pauseLocked && (
+          <button type="button" className="timer-button running" title="Tạm dừng" aria-label="Tạm dừng bấm giờ" onClick={() => onPause(todo)}>
+            <Icon name="pause" size={12} />
+          </button>
+        )
       ) : (
         !todo.done && (
           <button type="button" className="timer-button" title="Bắt đầu bấm giờ" aria-label="Bắt đầu bấm giờ" onClick={() => onStart(todo.id)}>
@@ -118,11 +121,12 @@ export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onS
   );
 }
 
-export function HistoryItem({ todo, routine }) {
+export function HistoryItem({ todo, routine, selected, onSelect }) {
+  const state = todo.skipped ? "skipped" : todo.done ? "done" : "";
   return (
-    <li className={`todo readonly ${todo.skipped ? "skipped" : todo.done ? "done" : ""}`}>
+    <li className={`todo readonly ${state} ${selected ? "selected" : ""}`} data-id={todo.id}>
       <Check todo={todo} />
-      <Body todo={todo} tags={tagsOf(todo, { routine, history: true })} />
+      <Body todo={todo} tags={tagsOf(todo, { routine, history: true })} onClick={() => onSelect(todo.id)} />
       <Estimate todo={todo} />
     </li>
   );

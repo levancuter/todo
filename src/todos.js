@@ -38,7 +38,8 @@ function mergeById(snaps) {
 }
 
 // Loads only open todos and todos done today, so reads don't grow with history.
-// callback(todos) runs once both queries have results.
+// callback(todos, fromServer) runs once both queries have results. Metadata
+// changes are needed to learn when the data stops coming from the cache.
 export function watchTodos(uid, today, callback, onError) {
   const queries = [
     query(todosRef(uid), where("done", "==", false)),
@@ -49,13 +50,14 @@ export function watchTodos(uid, today, callback, onError) {
   const unsubs = queries.map((q, i) =>
     onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snap) => {
         snaps[i] = snap;
         if (!snaps.every(Boolean)) return;
         // Ticking a todo moves it between the queries and both fire, each in
         // its own task. Wait for both, or the todo looks deleted in between.
         clearTimeout(timer);
-        timer = setTimeout(() => callback(mergeById(snaps)));
+        timer = setTimeout(() => callback(mergeById(snaps), snaps.every((s) => !s.metadata.fromCache)));
       },
       onError,
     ),
@@ -135,28 +137,36 @@ export function setSkipped(uid, id, skipped, today) {
   return updateTodo(uid, id, skipFields(skipped, today));
 }
 
-// Adds the running time to actualSeconds
+// Adds the running time to actualSeconds. timerStoppedAt tells auto-start
+// whether the current work period already had a timer.
 function stopFields(todo, at) {
-  return { actualSeconds: (todo.actualSeconds || 0) + elapsedSeconds(todo, at), timerStartedAt: null };
+  return {
+    actualSeconds: (todo.actualSeconds || 0) + elapsedSeconds(todo, at),
+    timerStartedAt: null,
+    timerStoppedAt: at,
+  };
 }
 
+const startFields = (at) => ({ timerStartedAt: at, timerResume: false });
+
 // Only one timer runs: the ones in `running` stop in the same write
-export function startTimer(uid, id, running, now) {
+export function startTimer(uid, id, running, at) {
   const batch = writeBatch(db);
-  for (const todo of running) batch.update(doc(todosRef(uid), todo.id), stopFields(todo, now));
-  batch.update(doc(todosRef(uid), id), { timerStartedAt: now });
+  for (const todo of running) batch.update(doc(todosRef(uid), todo.id), stopFields(todo, at));
+  batch.update(doc(todosRef(uid), id), startFields(at));
   return batch.commit();
 }
 
-export function stopTimer(uid, todo, at) {
-  return updateTodo(uid, todo.id, stopFields(todo, at));
+// resume: start this todo again after the break (auto-stop at 12h / 18h)
+export function stopTimer(uid, todo, at, resume = false) {
+  return updateTodo(uid, todo.id, { ...stopFields(todo, at), timerResume: resume });
 }
 
 // Close the running todo (done or skipped) and start the next one in one write
 export function finishRunning(uid, todo, fields, next, now) {
   const batch = writeBatch(db);
   batch.update(doc(todosRef(uid), todo.id), { ...stopFields(todo, now), ...fields });
-  if (next) batch.update(doc(todosRef(uid), next.id), { timerStartedAt: now });
+  if (next) batch.update(doc(todosRef(uid), next.id), startFields(now));
   return batch.commit();
 }
 

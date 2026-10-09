@@ -81,13 +81,19 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 
 ### Bấm giờ (giờ thực tế) (đã làm)
 
-- Nút ▶ trên mỗi việc để bắt đầu bấm giờ. Mỗi lúc chỉ một việc chạy; bắt đầu việc khác thì việc đang chạy tự dừng.
-- Việc đang chạy hiện ngay trên danh sách: chấm nhấp nháy, đồng hồ và nút ⏸ thay cho ▶. Không có thanh "Đang làm" riêng.
+- Tự động trong giờ làm (T2–T6, 9h–12h, 13h–18h): luôn có một việc Công việc được bấm giờ, không cần bấm ▶.
+  - Việc được chọn: việc Công việc chưa xong đầu tiên theo thứ tự ưu tiên.
+  - Mở app muộn: tính từ đầu ca (9h hoặc 13h). Nếu trong ca đã có việc được bấm giờ thì tính từ lúc bắt đầu.
+  - 12h tự tạm dừng, 13h chạy lại đúng việc đang làm lúc 12h. 18h dừng.
+  - Không có nút tạm dừng cho việc Công việc trong giờ làm. Bấm ▶ việc khác để chuyển.
+- Việc Cuộc sống và ngoài giờ làm: bấm ▶ / ⏸ bằng tay.
+- Mỗi lúc chỉ một việc chạy; bắt đầu việc khác thì việc đang chạy tự dừng.
+- Việc đang chạy hiện ngay trên danh sách: chấm nhấp nháy và đồng hồ. Không có thanh "Đang làm" riêng.
 - Tự chuyển việc: tick xong (trên danh sách hoặc trong panel) hoặc bỏ qua việc đang chạy thì giờ được lưu và tự bắt đầu việc tiếp theo trong danh sách (theo thứ tự ưu tiên, bỏ qua việc đã xong / bỏ qua). Hết việc thì dừng.
-- Chỉ chuyển trong loại đang xem (Công việc hoặc Cuộc sống).
+- Chỉ chuyển trong cùng loại (Công việc hoặc Cuộc sống).
 - Quên tắt: việc Công việc tự dừng lúc 12h và 18h, mọi việc tự dừng lúc 0h.
 - Giờ thực tế vẫn sửa tay được trong panel (bước 0.1h) để chỉnh khi bấm sai. Ô này khóa khi đồng hồ đang chạy.
-- Panel có nút Bắt đầu / Tạm dừng và đồng hồ đang chạy.
+- Panel có nút Bắt đầu / Tạm dừng (trừ việc Công việc trong giờ làm) và đồng hồ đang chạy.
 - Tải lại trang hoặc mở trên máy khác vẫn thấy đồng hồ đang chạy.
 
 ### Task con
@@ -98,6 +104,15 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 - Tick hết task con không tự đánh dấu xong việc cha, chỉ gợi ý "Đã xong hết bước, đánh dấu xong?".
 - Việc chưa xong chuyển sang ngày sau thì giữ nguyên trạng thái task con.
 - Việc lặp lại: task con thuộc mẫu, mỗi ngày tạo lại với tất cả bước chưa tick. Thêm, xóa, đổi tên task con của việc hôm nay thì cập nhật luôn mẫu; tick chỉ áp dụng cho ngày đó.
+
+### Tab theo giờ làm (đã làm)
+
+- Bước vào giờ làm (9h, 13h) thì tự chuyển sang tab Công việc, ra khỏi giờ làm (12h, 18h) thì sang tab Cuộc sống.
+- Giữa các mốc đó vẫn đổi tab bằng tay được.
+
+### Xem chi tiết trong lịch sử (đã làm)
+
+- Bấm vào việc trong lịch sử để mở panel chi tiết ở chế độ chỉ xem: mọi ô bị khóa, không có nút hành động hay xóa.
 
 ### Giao diện (đã làm)
 
