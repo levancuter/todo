@@ -124,6 +124,81 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
   - Thanh tiến độ giờ thay cho dòng chữ tổng giờ.
   - Khoảng cách, cỡ chữ, màu sắc thống nhất; giữ chế độ sáng/tối.
 
+## Đa ngôn ngữ: tiếng Việt và tiếng Nhật (đang thiết kế)
+
+Làm trước Phiên bản 6.
+
+### Giao diện
+
+- Thêm tiếng Nhật (日本語). Đổi ngôn ngữ trong menu tài khoản, nhớ cho mọi máy. Lần đầu theo ngôn ngữ trình duyệt.
+- Ngày giờ theo ngôn ngữ: "Thứ 6, 09/10" ↔ "10月9日(金)".
+
+### Nội dung việc
+
+- Tên việc, ghi chú, task con được dịch tự động bằng Gemini khi đổi ngôn ngữ.
+- Mỗi việc có 2 phiên bản (tiếng Việt, tiếng Nhật), sửa được cả 2, độc lập nhau. Sửa bản này không ghi đè bản kia.
+- Bản kia có thể đã cũ (bản đang xem được sửa sau khi dịch): hiện nhắc nhỏ kèm nút "Dịch lại". Chỉ dịch lại khi bấm.
+- Chỉ dịch việc đang hiển thị (hôm nay, ngày lịch sử đang mở, việc đang mở chi tiết), dịch dần khi xem. Đang dịch hoặc mất mạng thì tạm hiện bản gốc.
+- Việc lặp lại: mẫu cũng giữ 2 phiên bản, việc mỗi ngày nhận đủ cả 2.
+
+### Lộ trình
+
+| Bước | Nội dung | Cần AI |
+|---|---|---|
+| i18n-a | Dịch giao diện, ngày giờ, font, chọn ngôn ngữ | Không |
+| i18n-b | Cài Gemini (Firebase AI Logic, App Check), dịch nội dung việc, 2 phiên bản | Có |
+
+## Phiên bản 6 (đang thiết kế)
+
+Lập kế hoạch theo 3 tầng cố định (kiểu WBS): **Tháng → Tuần → Ngày**.
+
+```
+Mục tiêu (tháng 10)    Hoàn thành hệ thống báo cáo quý       40h
+├─ Hạng mục (tuần 41)  Thiết kế                              12h
+│   ├─ Việc T2 06/10   Phân tích yêu cầu                      3h
+│   └─ Việc T3 07/10   Vẽ màn hình                            4h
+└─ Hạng mục (tuần 42)  Lập trình                             20h
+```
+
+### Mục tiêu (tháng)
+
+- Tạo mục tiêu: tên, mô tả ngắn, tháng, loại (Công việc hoặc Cuộc sống, tùy mục tiêu).
+- Mỗi mục tiêu chia thành hạng mục theo tuần, mỗi hạng mục chia thành việc theo ngày.
+- Tiến độ ở mục tiêu và từng hạng mục: số việc xong, giờ thực tế so với dự kiến.
+
+### Việc (ngày)
+
+- Chính là các việc hằng ngày đang có (bấm giờ, bỏ qua, task con giữ nguyên), thêm ngày dự định làm.
+- Việc có ngày dự định ở tương lai chưa hiện ở Hôm nay, đến đúng ngày mới hiện. Chưa xong thì vẫn chuyển sang ngày sau như cũ.
+
+### Màn hình Tuần
+
+- Mỗi ngày một cột: các việc trong ngày và tổng giờ so với giờ trống. Cảnh báo ngày bị quá giờ.
+- Kéo việc sang cột khác để dời ngày.
+
+### Tự xếp ngày
+
+- App (không phải AI) xếp việc vào ngày theo giờ trống, giữ thứ tự hạng mục và việc; việc của hạng mục tuần nào xếp vào tuần đó.
+- Giờ trống mỗi ngày:
+  - Công việc: T2–T6, 8h trừ việc đã có.
+  - Cuộc sống: mặc định 2h/ngày cả tuần (chỉnh được sau).
+- Tuần không đủ giờ: báo trước, cho chọn dời phần dư sang tuần sau.
+- Nút "Xếp lại": khi bị trễ, xếp lại các việc chưa xong bắt đầu từ hôm nay.
+
+### Chia việc bằng AI (Gemini)
+
+- Nút "Chia việc bằng AI" trong mục tiêu: Gemini đề xuất hạng mục theo tuần và việc nhỏ kèm giờ dự kiến.
+- Khi chia việc, chỉ gửi cho Gemini mô tả đơn giản: tên và mô tả ngắn của mục tiêu, tháng, số tuần, giờ trống. (Dịch nội dung thì gửi tên việc, ghi chú, task con, xem mục Đa ngôn ngữ.)
+- Xem lại, sửa trước khi lưu. Lưu xong thì app tự xếp ngày.
+
+### Lộ trình
+
+| Bước | Nội dung | Cần AI |
+|---|---|---|
+| 6a | Ngày dự định + màn hình Tuần (lập kế hoạch tay) | Không |
+| 6b | Mục tiêu và hạng mục nhập tay, tiến độ, tự xếp ngày | Không |
+| 6c | Gemini chia việc (Gemini, App Check đã cài ở i18n-b) | Có |
+
 ## Dự kiến
 
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
