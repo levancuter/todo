@@ -73,7 +73,8 @@ test("v2 done todos get doneDate from createdAt, once", async () => {
 test("work tab: carried label, repeat label, hours against 8h and work time left", async () => {
   assert.deepEqual(await ui.ids(), ["a", "d", "r2_2026-10-08"]);
   const texts = await ui.texts();
-  assert.match(texts[0], /^Việc cũ không loại\s*Từ 06\/10$/);
+  // Running since 9:00: the clock is in the label line
+  assert.match(texts[0], /^Việc cũ không loại1:00:0\dTừ 06\/10$/);
   assert.match(texts[2], /^Daily standup\s*T2–T6$/);
   assert.equal(await ui.text("#hours-total"), "5.5h");
   assert.equal(await ui.text("#hours-cap"), "/ 8h kế hoạch");

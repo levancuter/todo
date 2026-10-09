@@ -538,6 +538,9 @@ button.text {
 }
 
 .estimate {
+  flex: none;
+  min-width: 64px;
+  text-align: right;
   padding-top: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -698,19 +701,21 @@ button.text {
 
 /* Timer */
 
+/* Be Vietnam Pro has no tabular digits: a fixed width keeps the labels still */
 .timer-clock {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding-top: 6px;
+  min-width: 72px;
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--cat);
 }
 
-.detail-actions .timer-clock {
-  padding-top: 0;
+.slot {
+  width: 32px;
+  flex: none;
 }
 
 .pulse {
@@ -902,7 +907,8 @@ button.danger:hover {
     opacity: 1;
   }
 
-  .row-action.skip {
+  .row-action.skip,
+  .slot-skip {
     display: none;
   }
 
