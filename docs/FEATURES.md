@@ -124,6 +124,30 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
   - Thanh tiến độ giờ thay cho dòng chữ tổng giờ.
   - Khoảng cách, cỡ chữ, màu sắc thống nhất; giữ chế độ sáng/tối.
 
+## Đa ngôn ngữ: tiếng Việt và tiếng Nhật (đang thiết kế)
+
+Làm trước Phiên bản 6.
+
+### Giao diện
+
+- Thêm tiếng Nhật (日本語). Đổi ngôn ngữ trong menu tài khoản, nhớ cho mọi máy. Lần đầu theo ngôn ngữ trình duyệt.
+- Ngày giờ theo ngôn ngữ: "Thứ 6, 09/10" ↔ "10月9日(金)".
+
+### Nội dung việc
+
+- Tên việc, ghi chú, task con được dịch tự động bằng Gemini khi đổi ngôn ngữ.
+- Mỗi việc có 2 phiên bản (tiếng Việt, tiếng Nhật), sửa được cả 2, độc lập nhau. Sửa bản này không ghi đè bản kia.
+- Bản kia có thể đã cũ (bản đang xem được sửa sau khi dịch): hiện nhắc nhỏ kèm nút "Dịch lại". Chỉ dịch lại khi bấm.
+- Chỉ dịch việc đang hiển thị (hôm nay, ngày lịch sử đang mở, việc đang mở chi tiết), dịch dần khi xem. Đang dịch hoặc mất mạng thì tạm hiện bản gốc.
+- Việc lặp lại: mẫu cũng giữ 2 phiên bản, việc mỗi ngày nhận đủ cả 2.
+
+### Lộ trình
+
+| Bước | Nội dung | Cần AI |
+|---|---|---|
+| i18n-a | Dịch giao diện, ngày giờ, font, chọn ngôn ngữ | Không |
+| i18n-b | Cài Gemini (Firebase AI Logic, App Check), dịch nội dung việc, 2 phiên bản | Có |
+
 ## Phiên bản 6 (đang thiết kế)
 
 Lập kế hoạch theo 3 tầng cố định (kiểu WBS): **Tháng → Tuần → Ngày**.
@@ -164,7 +188,7 @@ Mục tiêu (tháng 10)    Hoàn thành hệ thống báo cáo quý       40h
 ### Chia việc bằng AI (Gemini)
 
 - Nút "Chia việc bằng AI" trong mục tiêu: Gemini đề xuất hạng mục theo tuần và việc nhỏ kèm giờ dự kiến.
-- Chỉ gửi cho Gemini mô tả đơn giản: tên và mô tả ngắn của mục tiêu, tháng, số tuần, giờ trống. Không gửi ghi chú hay các việc khác.
+- Khi chia việc, chỉ gửi cho Gemini mô tả đơn giản: tên và mô tả ngắn của mục tiêu, tháng, số tuần, giờ trống. (Dịch nội dung thì gửi tên việc, ghi chú, task con, xem mục Đa ngôn ngữ.)
 - Xem lại, sửa trước khi lưu. Lưu xong thì app tự xếp ngày.
 
 ### Lộ trình
@@ -173,11 +197,10 @@ Mục tiêu (tháng 10)    Hoàn thành hệ thống báo cáo quý       40h
 |---|---|---|
 | 6a | Ngày dự định + màn hình Tuần (lập kế hoạch tay) | Không |
 | 6b | Mục tiêu và hạng mục nhập tay, tiến độ, tự xếp ngày | Không |
-| 6c | Gemini chia việc, bật App Check | Có |
+| 6c | Gemini chia việc (Gemini, App Check đã cài ở i18n-b) | Có |
 
 ## Dự kiến
 
-- Đa ngôn ngữ: thêm tiếng Nhật (日本語). Đổi ngôn ngữ trong menu tài khoản, nhớ cho mọi máy. Chỉ dịch giao diện, nội dung việc giữ nguyên như đã nhập. Nên làm trước Phiên bản 6.
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
 - Ghi chú dạng nhật ký (nhiều ghi chú có thời gian)
 - Lọc: tất cả / đang làm / đã xong

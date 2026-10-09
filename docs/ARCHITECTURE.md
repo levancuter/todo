@@ -209,7 +209,8 @@ users/{uid}/todos/{todoId}
 - Gemini: Firebase AI Logic (`firebase/ai`), Gemini Developer API, dùng hạn mức miễn phí của gói Spark. Gọi từ trình duyệt, không cần server; khóa không nằm trong code.
   - Dùng structured output (JSON schema) để nhận cây hạng mục và việc.
   - Bắt buộc Firebase App Check (reCAPTCHA) từ 02/11/2026.
-  - Chỉ gửi: tên, mô tả ngắn, tháng, số tuần, giờ trống. Chỉ gọi khi bấm nút, nên không chạm giới hạn số lần gọi.
+  - Chia việc chỉ gửi: tên, mô tả ngắn, tháng, số tuần, giờ trống. Chỉ gọi khi bấm nút, nên không chạm giới hạn số lần gọi.
+  - Firebase AI Logic và App Check được cài từ bước dịch nội dung (i18n-b), v6c dùng lại.
 
 ## Định hướng
 
@@ -228,9 +229,29 @@ users/{uid}/todos/{todoId}
 - Ngày giờ dùng `Intl.DateTimeFormat` theo ngôn ngữ: "Thứ 6, 09/10" ↔ "10月9日(金)". Logic thuần (`dates.js`, `routines.js`...) chỉ trả dữ liệu, phần chữ để giao diện dịch.
 - Font: Be Vietnam Pro không có chữ Nhật, thêm Noto Sans JP làm font dự phòng, chỉ tải khi chọn tiếng Nhật.
 - Ngôn ngữ lưu ở `users/{uid}/meta/settings` để mọi máy dùng chung. Lần đầu lấy theo ngôn ngữ trình duyệt.
-- Không dịch dữ liệu người dùng nhập (tên việc, ghi chú). Gemini (v6c) trả lời theo ngôn ngữ đang dùng.
 - Test giao diện chạy các màn hình chính ở cả hai ngôn ngữ; kiểm tra không còn chuỗi chưa dịch.
 - Làm trước Phiên bản 6 để chuỗi mới của v6 vào bộ dịch ngay từ đầu.
+
+Dịch nội dung việc (2 phiên bản):
+
+```
+users/{uid}/todos/{todoId}
+  lang: "vi" | "ja"          // ngôn ngữ của text, note, subtasks[].text (mặc định "vi")
+  i18n: {
+    ja: {                    // phiên bản ngôn ngữ còn lại
+      text, note,
+      subtasks: { [id]: text },
+      sourceHash             // hash bản gốc lúc dịch, để biết bản dịch đã cũ
+    }
+  }
+```
+
+- Hiển thị: ngôn ngữ đang dùng = `lang` thì đọc `text`, `note`; ngược lại đọc `i18n[ngôn ngữ]`. Thiếu bản dịch thì tạm hiện bản gốc và đưa vào hàng chờ dịch.
+- Sửa: sửa đúng phiên bản đang xem, không đụng bản kia. Sửa bản gốc làm `sourceHash` không khớp → hiện "Dịch lại".
+- Dịch: gom các việc đang hiển thị còn thiếu bản dịch, gửi Gemini một lần (structured output: mảng `{ id, text, note, subtasks }`), ghi kết quả vào `i18n`. Mỗi việc chỉ dịch một lần cho tới khi bấm "Dịch lại".
+- Việc lặp lại: mẫu có `lang` và `i18n` giống todo; việc mỗi ngày copy cả hai phiên bản.
+- Gửi cho Gemini: tên việc, ghi chú, tên task con (người dùng đã đồng ý). Không gửi giờ, ngày hay dữ liệu khác.
+- Lượt gọi Gemini: một lần cho mỗi nhóm việc mới hiện ra, không gọi lại khi đã có bản dịch. Lượt ghi Firestore: một lần cho mỗi việc được dịch.
 
 ## Ghi chú
 
