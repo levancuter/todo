@@ -36,6 +36,12 @@ const PATHS = {
       <path d="M15 12H3" />
     </>
   ),
+  skip: (
+    <>
+      <path d="M5 5l10 7-10 7z" />
+      <path d="M19 5v14" />
+    </>
+  ),
   trash: (
     <>
       <path d="M3 6h18" />

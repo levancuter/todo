@@ -97,6 +97,8 @@ function newTodo(fields) {
     routineId: null,
     date: null,
     deadline: null,
+    skipped: false,
+    actualSeconds: 0,
     ...fields,
   };
 }
@@ -114,7 +116,13 @@ export function setOrder(uid, id, order) {
 }
 
 export function setDone(uid, id, done, today) {
-  return updateTodo(uid, id, { done, doneDate: done ? today : null });
+  return updateTodo(uid, id, { done, skipped: false, doneDate: done ? today : null });
+}
+
+// Skipped = closed without doing it. Stored as done so the day queries
+// treat it like a done todo: shown today, not carried over, kept in history.
+export function setSkipped(uid, id, skipped, today) {
+  return updateTodo(uid, id, { done: skipped, skipped, doneDate: skipped ? today : null });
 }
 
 export function removeTodo(uid, id) {

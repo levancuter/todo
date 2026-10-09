@@ -465,6 +465,12 @@ button.link {
   color: #fff;
 }
 
+/* Skipped: dashed circle with a skip mark */
+.check.skipped .box {
+  border-style: dashed;
+  color: var(--subtle);
+}
+
 .check input:focus-visible + .box {
   outline: 2px solid var(--cat);
   outline-offset: 2px;
@@ -496,6 +502,10 @@ button.text {
 .done .title {
   color: var(--subtle);
   text-decoration: line-through;
+}
+
+.skipped .title {
+  color: var(--subtle);
 }
 
 .meta {
@@ -535,11 +545,17 @@ button.text {
   color: var(--chip-text);
 }
 
-.done .estimate {
+.done .estimate,
+.skipped .estimate {
   color: var(--subtle);
 }
 
-.delete {
+.estimate.over {
+  color: var(--danger);
+}
+
+/* Skip and delete buttons, shown on hover */
+.row-action {
   width: 32px;
   height: 32px;
   flex: none;
@@ -553,9 +569,14 @@ button.text {
   opacity: 0;
 }
 
-.todo:hover .delete,
-.delete:focus-visible {
+.todo:hover .row-action,
+.row-action:focus-visible {
   opacity: 1;
+}
+
+.row-action:hover {
+  background: var(--chip);
+  color: var(--text);
 }
 
 .delete:hover {
@@ -633,6 +654,30 @@ button.text {
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 28px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--chip-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chip-button:hover {
+  background: var(--chip);
 }
 
 .detail-grid {
@@ -781,9 +826,13 @@ button.danger:hover {
     justify-content: center;
   }
 
-  /* No hover on touch screens: keep delete visible */
+  /* No hover on touch screens: keep delete visible, skip is in the panel */
   .delete {
     opacity: 1;
+  }
+
+  .row-action.skip {
+    display: none;
   }
 
   #detail {

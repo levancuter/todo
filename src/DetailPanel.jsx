@@ -1,6 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { categoryOf } from "./category.js";
-import { estimateOf, parseEstimate } from "./hours.js";
+import { actualOf, estimateOf, parseHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { REPEAT_DAILY, REPEAT_WEEKDAYS, repeatMode } from "./routines.js";
 
@@ -20,6 +20,7 @@ function valuesOf(todo) {
   return {
     text: todo.text,
     estimate: String(estimateOf(todo)),
+    actual: String(round1(actualOf(todo))),
     note: todo.note || "",
     category: categoryOf(todo),
     deadline: todo.deadline || "",
@@ -27,7 +28,7 @@ function valuesOf(todo) {
 }
 
 // ref exposes flush() (save now) and discard() (drop unsaved edits).
-// Handlers: onSave(id, fields) -> Promise, onDone(id, done), onRepeat(id, days | null),
+// Handlers: onSave(id, fields) -> Promise, onDone(id, done), onSkip(id, skipped), onRepeat(id, days | null),
 // onDelete(id), onClose(), onError(err)
 export default function DetailPanel({ ref, todo, routine, ...handlers }) {
   const latest = useRef(handlers);
@@ -95,10 +96,11 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
   }, [!!todo]);
   useEffect(() => () => document.body.classList.remove("detail-open"), []);
 
-  function edit(field, value, parsed) {
+  // saveAs: the todo field to save when it differs from the input's name
+  function edit(field, value, parsed, saveAs = field) {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (parsed === null) return;
-    pending.current[field] = parsed;
+    pending.current[saveAs] = parsed;
     setStatus("Đang lưu...");
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, SAVE_DELAY_MS);
@@ -157,7 +159,7 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
             id="detail-done"
             type="checkbox"
             aria-label="Hoàn thành"
-            checked={!!todo?.done}
+            checked={!!todo?.done && !todo.skipped}
             onChange={(e) => latest.current.onDone(id, e.target.checked)}
           />
           <span className="box" aria-hidden="true">
@@ -174,6 +176,13 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
         />
       </div>
 
+      <div className="detail-actions">
+        <button id="detail-skip" type="button" className="chip-button" onClick={() => latest.current.onSkip(id, !todo?.skipped)}>
+          <Icon name="skip" size={14} />
+          {todo?.skipped ? "Hủy bỏ qua" : "Bỏ qua"}
+        </button>
+      </div>
+
       <div className="detail-grid">
         <label className="field">
           Giờ dự kiến
@@ -182,10 +191,28 @@ export default function DetailPanel({ ref, todo, routine, ...handlers }) {
               id="detail-estimate"
               type="number"
               min="0"
-              step="0.5"
+              step="0.1"
               inputMode="decimal"
               {...typing("estimate")}
-              onChange={(e) => edit("estimate", e.target.value, parseEstimate(e.target.value))}
+              onChange={(e) => edit("estimate", e.target.value, parseHours(e.target.value))}
+            />
+            h
+          </span>
+        </label>
+        <label className="field">
+          Giờ thực tế
+          <span className="input-unit">
+            <input
+              id="detail-actual"
+              type="number"
+              min="0"
+              step="0.1"
+              inputMode="decimal"
+              {...typing("actual")}
+              onChange={(e) => {
+                const hours = parseHours(e.target.value);
+                edit("actual", e.target.value, hours === null ? null : Math.round(hours * 3600), "actualSeconds");
+              }}
             />
             h
           </span>

@@ -1,10 +1,10 @@
 import { carriedFrom, deadlineStatus } from "./daily.js";
 import { formatDay } from "./dates.js";
-import { estimateOf, formatHours } from "./hours.js";
+import { actualOf, estimateOf, formatHours, round1 } from "./hours.js";
 import Icon from "./Icon.jsx";
 import { repeatLabel } from "./routines.js";
 
-// Labels under the title: repeat, deadline, carried over, unfinished
+// Labels under the title: repeat, skipped, deadline, carried over, unfinished
 function tagsOf(todo, { today, routine, history }) {
   const tags = [];
   if (todo.routineId) {
@@ -14,6 +14,10 @@ function tagsOf(todo, { today, routine, history }) {
         {repeatLabel(routine?.days) ?? "Lặp lại"}
       </span>,
     );
+  }
+  if (todo.skipped) {
+    tags.push(<span key="skipped" className="tag">Bỏ qua</span>);
+    return tags;
   }
   if (history) {
     if (!todo.done) tags.push(<span key="missed" className="tag missed">Chưa xong</span>);
@@ -28,19 +32,21 @@ function tagsOf(todo, { today, routine, history }) {
   return tags;
 }
 
+// A skipped todo shows a dashed circle; ticking it marks it done instead
 function Check({ todo, onToggle }) {
+  const done = todo.done && !todo.skipped;
   return (
-    <span className="check">
+    <span className={todo.skipped ? "check skipped" : "check"}>
       <input
         type="checkbox"
-        checked={!!todo.done}
+        checked={done}
         disabled={!onToggle}
         readOnly={!onToggle}
         onChange={onToggle && ((e) => onToggle(todo.id, e.target.checked))}
-        aria-label={todo.done ? "Bỏ đánh dấu xong" : "Đánh dấu xong"}
+        aria-label={done ? "Bỏ đánh dấu xong" : "Đánh dấu xong"}
       />
       <span className="box" aria-hidden="true">
-        <Icon name="check" size={12} strokeWidth={3} />
+        <Icon name={todo.skipped ? "skip" : "check"} size={todo.skipped ? 10 : 12} strokeWidth={3} />
       </span>
     </span>
   );
@@ -56,12 +62,22 @@ function Body({ todo, tags, onClick }) {
   );
 }
 
+// "1.5/2h" once time was spent, red when over the estimate
 function Estimate({ todo }) {
-  return <span className="estimate">{formatHours(estimateOf(todo))}</span>;
+  const estimate = estimateOf(todo);
+  const actual = actualOf(todo);
+  if (actual < 0.05) return <span className="estimate">{formatHours(estimate)}</span>;
+  return (
+    <span className={actual > estimate ? "estimate over" : "estimate"}>
+      {round1(actual)}/{formatHours(estimate)}
+    </span>
+  );
 }
 
-export function TodoItem({ todo, today, routine, selected, onToggle, onSelect, onDelete }) {
-  const className = ["todo", todo.done && "done", selected && "selected"].filter(Boolean).join(" ");
+export function TodoItem({ todo, today, routine, selected, onToggle, onSkip, onSelect, onDelete }) {
+  const className = ["todo", todo.done && (todo.skipped ? "skipped" : "done"), selected && "selected"]
+    .filter(Boolean)
+    .join(" ");
   return (
     <li className={className} data-id={todo.id}>
       <span className="handle" title="Kéo để sắp xếp">
@@ -70,7 +86,12 @@ export function TodoItem({ todo, today, routine, selected, onToggle, onSelect, o
       <Check todo={todo} onToggle={onToggle} />
       <Body todo={todo} tags={tagsOf(todo, { today, routine })} onClick={() => onSelect(todo.id)} />
       <Estimate todo={todo} />
-      <button type="button" className="delete" title="Xóa" aria-label="Xóa việc" onClick={() => onDelete(todo.id)}>
+      {!todo.done && (
+        <button type="button" className="row-action skip" title="Bỏ qua" aria-label="Bỏ qua" onClick={() => onSkip(todo.id)}>
+          <Icon name="skip" size={14} />
+        </button>
+      )}
+      <button type="button" className="row-action delete" title="Xóa" aria-label="Xóa việc" onClick={() => onDelete(todo.id)}>
         <Icon name="x" />
       </button>
     </li>
@@ -79,7 +100,7 @@ export function TodoItem({ todo, today, routine, selected, onToggle, onSelect, o
 
 export function HistoryItem({ todo, routine }) {
   return (
-    <li className={todo.done ? "todo done readonly" : "todo readonly"}>
+    <li className={`todo readonly ${todo.skipped ? "skipped" : todo.done ? "done" : ""}`}>
       <Check todo={todo} />
       <Body todo={todo} tags={tagsOf(todo, { routine, history: true })} />
       <Estimate todo={todo} />
