@@ -52,6 +52,24 @@ test("the hours column lines up on every row", async () => {
   assert.equal(new Set(edges).size, 1, edges.join(", "));
 });
 
+test("no empty space on the right: the timer column ends at the row's padding", async () => {
+  const gaps = await page.$$eval("#todo-list .todo", (rows) =>
+    rows.map((li) => Math.round(li.getBoundingClientRect().right - li.querySelector(".trail").getBoundingClientRect().right)),
+  );
+  assert.ok(gaps.every((gap) => gap <= 13), gaps.join(", "));
+});
+
+test("skip and delete show on hover only and do not move the hours column", async () => {
+  const visibility = (id) => page.$eval(`${ui.li(id)} .row-actions`, (el) => getComputedStyle(el).visibility);
+  const before = await rightEdges();
+  await page.mouse.move(0, 0);
+  assert.equal(await visibility("open"), "hidden");
+  await page.hover(`${ui.li("open")} .title`);
+  assert.equal(await visibility("open"), "visible");
+  assert.deepEqual(await rightEdges(), before);
+  await page.mouse.move(0, 0);
+});
+
 test("a ticking clock does not move the title or the row", async () => {
   // The two moments from the bug report: 6 minutes already spent, then 0:06:46 and 0:07:11
   const title = `${ui.li("run")} .title`;
