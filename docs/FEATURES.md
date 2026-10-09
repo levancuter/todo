@@ -126,6 +126,9 @@ Bỏ qua = đã lên kế hoạch nhưng quyết định không làm.
 
 ## Dự kiến
 
+- Mục tiêu tự chia việc: nhập một mục tiêu lớn (ví dụ "Hoàn thành báo cáo quý"), app tự chia thành các việc nhỏ có giờ dự kiến và xếp vào các ngày trong tuần.
+  - Xếp theo giờ làm còn trống mỗi ngày (8h trừ việc đã có), xem lại và sửa trước khi lưu.
+  - Chia tự động cần AI (vd Claude API) và khóa bí mật, nên cần logic phía server (xem ARCHITECTURE mục Định hướng).
 - Nhập nhanh giờ khi tạo việc, ví dụ `Viết báo cáo ~2h`
 - Ghi chú dạng nhật ký (nhiều ghi chú có thời gian)
 - Lọc: tất cả / đang làm / đã xong
