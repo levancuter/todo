@@ -12,6 +12,8 @@ const textInput = $("detail-text");
 const estimateInput = $("detail-estimate");
 const noteInput = $("detail-note");
 const categoryInput = $("detail-category");
+const deadlineRow = $("detail-deadline-row");
+const deadlineInput = $("detail-deadline");
 const repeatInput = $("detail-repeat");
 const daysBox = $("detail-days");
 const created = $("detail-created");
@@ -37,6 +39,10 @@ export function initDetail(h) {
   doneBox.addEventListener("change", () => handlers.onDone(shown.id, doneBox.checked));
   categoryInput.addEventListener("change", () => {
     pending.category = categoryInput.value;
+    flush();
+  });
+  deadlineInput.addEventListener("change", () => {
+    pending.deadline = deadlineInput.value || null;
     flush();
   });
   repeatInput.addEventListener("change", onRepeatChange);
@@ -140,6 +146,9 @@ function fill() {
   const mode = customPicked ? "custom" : repeatMode(days);
   repeatInput.value = mode;
   daysBox.hidden = mode !== "custom";
+  // Only one-off todos have a deadline
+  deadlineRow.hidden = mode !== "none";
+  setValue(deadlineInput, shown.deadline || "");
   for (const button of daysBox.children) {
     button.setAttribute("aria-pressed", days.includes(Number(button.dataset.day)));
   }

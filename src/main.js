@@ -1,6 +1,6 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { categoryOf, isWorkTime, workHoursLeft } from "./category.js";
-import { carriedFrom, historyTodos, todayTodos } from "./daily.js";
+import { carriedFrom, deadlineStatus, historyTodos, todayTodos } from "./daily.js";
 import { addDays, dayKey, formatDay } from "./dates.js";
 import { hideDetail, initDetail, showDetail } from "./detail.js";
 import { isDragging, makeSortable } from "./drag.js";
@@ -197,6 +197,14 @@ function todoInfo(todo) {
   return { text, estimate };
 }
 
+function deadlineTag(todo) {
+  const status = deadlineStatus(todo, today);
+  if (status === "overdue") return tag("quá hạn " + formatDay(todo.deadline), "tag missed");
+  if (status === "today") return tag("hạn hôm nay", "tag due");
+  if (status === "upcoming") return tag("hạn " + formatDay(todo.deadline));
+  return null;
+}
+
 function renderTodo(todo) {
   const li = document.createElement("li");
   li.classList.toggle("done", todo.done);
@@ -219,6 +227,8 @@ function renderTodo(todo) {
   text.addEventListener("click", () => select(todo.id === selectedId ? null : todo.id));
   const from = carriedFrom(todo, today);
   if (from) text.append(tag("từ " + formatDay(from)));
+  const deadline = deadlineTag(todo);
+  if (deadline) text.append(deadline);
 
   const del = document.createElement("button");
   del.className = "delete";

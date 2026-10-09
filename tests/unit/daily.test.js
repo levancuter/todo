@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { carriedFrom, historyTodos, todayTodos } from "../../src/daily.js";
+import { carriedFrom, deadlineStatus, historyTodos, todayTodos } from "../../src/daily.js";
 
 const TODAY = "2026-10-08";
 const ts = (date) => ({ toDate: () => date });
@@ -38,4 +38,13 @@ test("historyTodos: done that day plus unfinished routine todos", () => {
     { id: "d", done: true, doneDate: TODAY },
   ];
   assert.deepEqual(historyTodos(items, day).map((t) => t.id), ["a", "b", "c"]);
+});
+
+test("deadlineStatus: overdue, today, upcoming; nothing when done or no deadline", () => {
+  assert.equal(deadlineStatus({ done: false, deadline: "2026-10-07" }, TODAY), "overdue");
+  assert.equal(deadlineStatus({ done: false, deadline: TODAY }, TODAY), "today");
+  assert.equal(deadlineStatus({ done: false, deadline: "2026-10-12" }, TODAY), "upcoming");
+  assert.equal(deadlineStatus({ done: true, deadline: "2026-10-07" }, TODAY), null);
+  assert.equal(deadlineStatus({ done: false, deadline: null }, TODAY), null);
+  assert.equal(deadlineStatus({ done: false }, TODAY), null);
 });

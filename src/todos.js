@@ -96,6 +96,7 @@ function newTodo(fields) {
     category: "work",
     routineId: null,
     date: null,
+    deadline: null,
     ...fields,
   };
 }
@@ -137,7 +138,7 @@ export function createRoutineTodo(uid, routine, today) {
   return batch.commit();
 }
 
-// Turns a todo into today's todo of a new routine
+// Turns a todo into today's todo of a new routine. Routine todos have no deadline.
 export function startRoutine(uid, todo, days, today) {
   const routine = doc(routinesRef(uid));
   const batch = writeBatch(db);
@@ -149,7 +150,7 @@ export function startRoutine(uid, todo, days, today) {
     lastCreated: today,
     createdAt: serverTimestamp(),
   });
-  batch.update(doc(todosRef(uid), todo.id), { routineId: routine.id, date: today });
+  batch.update(doc(todosRef(uid), todo.id), { routineId: routine.id, date: today, deadline: null });
   return batch.commit();
 }
 
